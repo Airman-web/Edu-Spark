@@ -17,6 +17,7 @@ import {
   faArrowRight,
   faShieldHalved,
   faGraduationCap,
+  faUser,
 } from "@fortawesome/free-solid-svg-icons";
 
 type Tab = "guardian" | "student";
@@ -30,7 +31,7 @@ export default function LoginPage() {
   const [guardianPass,  setGuardianPass]  = useState("");
 
   /* Student form state */
-  const [studentId,   setStudentId]   = useState("");
+  const [studentUser, setStudentUser] = useState("");
   const [studentPass, setStudentPass] = useState("");
 
   const handleGuardianSubmit = (e: React.FormEvent) => {
@@ -42,7 +43,7 @@ export default function LoginPage() {
   const handleStudentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: connect to NestJS /auth/student/login
-    console.log("Student login", { studentId, studentPass });
+    console.log("Student login", { studentUser, studentPass });
   };
 
   return (
@@ -333,30 +334,27 @@ export default function LoginPage() {
                       Are you a student?
                     </p>
                     <p style={{ fontSize: "0.75rem", color: "#6b7280", fontFamily: "'Nunito', sans-serif" }}>
-                      Log in with your Student ID and password. Your ID was given to you by your guardian.
+                      Log in with your Username and password to access your lessons.
                     </p>
                   </div>
                 </div>
 
                 <form onSubmit={handleStudentSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
-                  {/* Student ID */}
+                  {/* Username */}
                   <div>
-                    <label style={labelStyle}>Student ID</label>
+                    <label style={labelStyle}>Username</label>
                     <div style={inputWrapperStyle}>
-                      <FontAwesomeIcon icon={faIdCard} style={inputIconStyle} />
+                      <FontAwesomeIcon icon={faUser} style={inputIconStyle} />
                       <input
                         type="text"
-                        placeholder="e.g. STUDENT16788"
-                        value={studentId}
-                        onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+                        placeholder="e.g. jdoe123"
+                        value={studentUser}
+                        onChange={(e) => setStudentUser(e.target.value)}
                         required
-                        style={{ ...inputStyle, letterSpacing: "0.05em", textTransform: "uppercase" }}
+                        style={{ ...inputStyle, letterSpacing: "0.02em" }}
                       />
                     </div>
-                    <p style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "6px", fontFamily: "'Nunito', sans-serif" }}>
-                      Your Student ID starts with "STUDENT" followed by numbers.
-                    </p>
                   </div>
 
                   {/* Password */}
@@ -454,31 +452,31 @@ export default function LoginPage() {
 }
 
 /* ─── Shared inline styles ───────────────────────────────────────────── */
-const labelStyle: React.CSSProperties = {
+const labelStyle = {
   display: "block",
   fontSize: "0.8rem",
   fontWeight: 600,
   color: "#374151",
   fontFamily: "'Nunito', sans-serif",
   marginBottom: "8px",
-};
+} as any;
 
-const inputWrapperStyle: React.CSSProperties = {
+const inputWrapperStyle = {
   position: "relative",
   display: "flex",
   alignItems: "center",
-};
+} as any;
 
-const inputIconStyle: React.CSSProperties = {
+const inputIconStyle = {
   position: "absolute",
   left: "14px",
   width: "15px",
   height: "15px",
   color: "#9ca3af",
   pointerEvents: "none",
-};
+} as any;
 
-const inputStyle: React.CSSProperties = {
+const inputStyle = {
   width: "100%",
   padding: "12px 16px 12px 42px",
   borderRadius: "12px",
@@ -489,9 +487,9 @@ const inputStyle: React.CSSProperties = {
   color: "#0d1333",
   outline: "none",
   transition: "border-color 0.2s, box-shadow 0.2s",
-};
+} as any;
 
-const eyeBtnStyle: React.CSSProperties = {
+const eyeBtnStyle = {
   position: "absolute",
   right: "14px",
   background: "none",
@@ -500,12 +498,12 @@ const eyeBtnStyle: React.CSSProperties = {
   padding: "4px",
   display: "flex",
   alignItems: "center",
-};
+} as any;
 
-const forgotStyle: React.CSSProperties = {
+const forgotStyle = {
   fontSize: "0.78rem",
   color: "#3749a9",
   fontWeight: 600,
   fontFamily: "'Nunito', sans-serif",
   textDecoration: "none",
-};
+} as any;
