@@ -4,11 +4,8 @@ Welcome to the EduSpark backend. This is a NestJS application using Prisma ORM w
 
 ## 🚀 Getting Started
 
-### 1. Prerequisites
-Ensure you have [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed.
-
-### 2. Environment Setup
-Create a `.env` file in the `backend` root (copy from `.env.example`) and configure your `DATABASE_URL` and `JWT_SECRET`.
+. Environment Setup
+Create a `.env` file in the `backend` root 
 
 ### 3. Installation
 ```bash
@@ -21,11 +18,9 @@ If you are setting up the database for the first time or after a schema change:
 # Push schema to database
 $ npx prisma db push
 
-# (Optional) Generate Prisma Client
+# Generate Prisma Client
 $ npx prisma generate
 
-# Seed initial grade groups (P1, P2, P3)
-# You can do this once the app is running via Swagger
 ```
 
 ### 5. Running the App
