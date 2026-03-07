@@ -43,7 +43,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   try {
     const response = await fetch(
-      "https://edu-spark-production.up.railway.app/api/auth/signup", // confirm endpoint
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`,
       {
         method: "POST",
         headers: {
