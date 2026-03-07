@@ -2,6 +2,7 @@
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 config.autoAddCss = false;
 
 import { useState } from "react";
@@ -11,7 +12,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEnvelope,
   faLock,
-  faIdCard,
   faEye,
   faEyeSlash,
   faArrowRight,
@@ -34,17 +34,92 @@ export default function LoginPage() {
   const [studentUser, setStudentUser] = useState("");
   const [studentPass, setStudentPass] = useState("");
 
-  const handleGuardianSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: connect to NestJS /auth/guardian/login
-    console.log("Guardian login", { guardianEmail, guardianPass });
-  };
+  // adding the loading and error states for the forms
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleStudentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: connect to NestJS /auth/student/login
-    console.log("Student login", { studentUser, studentPass });
-  };
+  const handleGuardianSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: guardianEmail,
+          password: guardianPass,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Login failed");
+    }
+
+    // Saving the token
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("role", data.role);
+
+    console.log("Guardian logged in:", data);
+
+    // redirecting to the guardian dashboard after login successful
+    window.location.href = "/guardian/dashboard";
+
+  } catch (err: any) {
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleStudentSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/student-login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          display_name: studentUser,
+          password: studentPass,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Login failed");
+    }
+
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("role", data.role);
+
+    console.log("Student logged in:", data);
+
+    // redirecting to the student dashboard after login successful
+    window.location.href = "/student/dashboard";
+
+  } catch (err: any) {
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{
@@ -54,7 +129,7 @@ export default function LoginPage() {
       flexDirection: "column",
     }}>
 
-      {/* ── Top bar ─────────────────────────────────────────────── */}
+      {/* The top bar section */}
       <div style={{
         background: "#ffffff",
         borderBottom: "1px solid #e8ecf8",
@@ -85,14 +160,14 @@ export default function LoginPage() {
           </span>
         </Link>
         <span style={{ fontSize: "0.85rem", color: "#6b7280", fontFamily: "'Nunito', sans-serif" }}>
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/register" style={{ color: "#3749a9", fontWeight: 600, textDecoration: "none" }}>
             Sign up
           </Link>
         </span>
       </div>
 
-      {/* ── Main content ────────────────────────────────────────── */}
+      {/* ── Main content  */}
       <div style={{
         flex: 1,
         display: "flex",
@@ -118,7 +193,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* ── Tab switcher ──────────────────────────────────────── */}
+          {/* The tab switcher between student and guardian*/}
           <div style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -167,7 +242,7 @@ export default function LoginPage() {
             })}
           </div>
 
-          {/* ── Form card ─────────────────────────────────────────── */}
+          {/*  Form card */}
           <div style={{
             background: "#ffffff",
             borderRadius: "20px",
@@ -175,8 +250,21 @@ export default function LoginPage() {
             boxShadow: "0 4px 32px rgba(19,27,70,0.1)",
             border: "1px solid #e8ecf8",
           }}>
+            {error && (
+              <div style={{
+                background: "#fee2e2",
+                border: "1px solid #fecaca",
+                color: "#b91c1c",
+                padding: "10px 14px",
+                borderRadius: "10px",
+                marginBottom: "16px",
+                fontSize: "0.8rem",
+              }}>
+                {error}
+              </div>
+            )}
 
-            {/* ── GUARDIAN FORM ─────────────────────────────── */}
+            {/*  Creating the gaurdian form */}
             {activeTab === "guardian" && (
               <>
                 {/* Context hint */}
@@ -261,6 +349,7 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
+                    disabled={loading}
                     style={{
                       width: "100%",
                       display: "flex",
@@ -275,14 +364,24 @@ export default function LoginPage() {
                       color: "#ffffff",
                       background: "linear-gradient(135deg, #1b2561 0%, #3749a9 100%)",
                       border: "none",
-                      cursor: "pointer",
+                      cursor: loading ? "not-allowed" : "pointer",
                       boxShadow: "0 8px 32px rgba(55,73,169,0.35)",
                       marginTop: "4px",
                       transition: "filter 0.2s, transform 0.2s",
+                      opacity: loading ? 0.7 : 1,
                     }}
                   >
-                    Log In as Guardian
-                    <FontAwesomeIcon icon={faArrowRight} style={{ width: "13px" }} />
+                    {loading ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        Log In as Guardian
+                        <FontAwesomeIcon icon={faArrowRight} style={{ width: "13px" }} />
+                      </>
+                    )}
                   </button>
                 </form>
 
@@ -390,6 +489,7 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
+                    disabled={loading}
                     style={{
                       width: "100%",
                       display: "flex",
@@ -404,14 +504,24 @@ export default function LoginPage() {
                       color: "#ffffff",
                       background: "linear-gradient(135deg, #290e42 0%, #4a2070 100%)",
                       border: "none",
-                      cursor: "pointer",
+                      cursor: loading ? "not-allowed" : "pointer",
                       boxShadow: "0 8px 32px rgba(41,14,66,0.35)",
                       marginTop: "4px",
                       transition: "filter 0.2s, transform 0.2s",
+                      opacity: loading ? 0.7 : 1,
                     }}
                   >
-                    Log In as Student
-                    <FontAwesomeIcon icon={faArrowRight} style={{ width: "13px" }} />
+                    {loading ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        Log In as Student
+                        <FontAwesomeIcon icon={faArrowRight} style={{ width: "13px" }} />
+                      </>
+                    )}
                   </button>
                 </form>
 
