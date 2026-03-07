@@ -268,32 +268,58 @@ export default function LandingPage() {
               gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
               gap:                 "24px",
             }}>
-              {features.map((f) => (
-                <div key={f.title} className={f.card}>
-                  <div className="card-icon card-icon-white-bg">
-                    <FontAwesomeIcon
-                      icon={f.icon}
-                      style={{ width: "22px", height: "22px", color: "#ffffff" }}
-                    />
+              {features.map((f) => {
+                const isGradeBasedCourses = f.title === "Grade-Based Courses";
+                const CardContent = (
+                  <div
+                    className={f.card}
+                    style={isGradeBasedCourses ? {
+                      cursor: "pointer",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                    } : {}}
+                  >
+                    <div className="card-icon card-icon-white-bg">
+                      <FontAwesomeIcon
+                        icon={f.icon}
+                        style={{ width: "22px", height: "22px", color: "#ffffff" }}
+                      />
+                    </div>
+                    <h3 style={{
+                      fontSize:     "1.05rem",
+                      fontWeight:   700,
+                      color:        "#ffffff",
+                      marginBottom: "10px",
+                    }}>
+                      {f.title}
+                    </h3>
+                    <p style={{
+                      fontSize:   "0.875rem",
+                      color:      "rgba(255,255,255,0.75)",
+                      lineHeight: 1.75,
+                    }}>
+                      {f.desc}
+                    </p>
                   </div>
-                  <h3 style={{
-                    fontSize:     "1.05rem",
-                    fontWeight:   700,
-                    color:        "#ffffff",
-                    marginBottom: "10px",
-                  }}>
-                    {f.title}
-                  </h3>
-                  <p style={{
-                    fontSize:   "0.875rem",
-                    color:      "rgba(255,255,255,0.75)",
-                    lineHeight: 1.75,
-                  }}>
-                    {f.desc}
-                  </p>
-                </div>
-              ))}
+                );
+
+                return isGradeBasedCourses ? (
+                  <Link key={f.title} href="/courses" style={{ textDecoration: "none" }} className="grade-based-courses-link">
+                    {CardContent}
+                  </Link>
+                ) : (
+                  <div key={f.title}>
+                    {CardContent}
+                  </div>
+                );
+              })}
             </div>
+
+            <style>{`
+              .grade-based-courses-link:hover .card-purple {
+                transform: scale(1.02) !important;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+              }
+            `}</style>
 
           </div>
         </section>
