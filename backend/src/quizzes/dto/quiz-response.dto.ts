@@ -1,7 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 class QuizOptionResponseDto {
-  @ApiProperty({ example: 'o1-550e8400-e29b-41d4-a716-446655440000', description: 'Unique option ID' })
+  @ApiProperty({
+    example: 'o1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Unique option ID',
+  })
   option_id: string;
 
   @ApiProperty({ example: 'Paris' })
@@ -12,7 +15,10 @@ class QuizOptionResponseDto {
 }
 
 class QuizQuestionResponseDto {
-  @ApiProperty({ example: 'qn1-550e8400-e29b-41d4-a716-446655440000', description: 'Unique question ID' })
+  @ApiProperty({
+    example: 'qn1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Unique question ID',
+  })
   question_id: string;
 
   @ApiProperty({ example: 'What is the capital of France?' })
@@ -23,10 +29,16 @@ class QuizQuestionResponseDto {
 }
 
 export class QuizResponseDto {
-  @ApiProperty({ example: 'q1-550e8400-e29b-41d4-a716-446655440000', description: 'Unique quiz ID' })
+  @ApiProperty({
+    example: 'q1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Unique quiz ID',
+  })
   quiz_id: string;
 
-  @ApiProperty({ example: 'l1-550e8400-e29b-41d4-a716-446655440000', description: 'ID of the associated lesson' })
+  @ApiProperty({
+    example: 'l1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'ID of the associated lesson',
+  })
   lesson_id: string;
 
   @ApiProperty({ example: 100 })

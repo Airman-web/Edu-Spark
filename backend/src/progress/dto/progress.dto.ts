@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, IsInt, IsDecimal, Min, Max } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  IsDecimal,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateLessonProgressDto {
@@ -7,7 +14,10 @@ export class UpdateLessonProgressDto {
   @IsNotEmpty()
   lesson_id: string;
 
-  @ApiProperty({ example: 50, description: 'Percentage of lesson completed (0-100)' })
+  @ApiProperty({
+    example: 50,
+    description: 'Percentage of lesson completed (0-100)',
+  })
   @IsNotEmpty()
   @Min(0)
   @Max(100)

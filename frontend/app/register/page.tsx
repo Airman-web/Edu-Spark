@@ -35,19 +35,42 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+// creating the handleSubmit function to send form data to the backend API for registration. It will handle loading state, success state, and error handling. On successful registration, it will redirect the user to the login page after a short delay.
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await fetch(
+      "https://edu-spark-production.up.railway.app/api/auth/signup", // confirm endpoint
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Registration failed");
+    }
+
+    setSuccess(true);
 
     setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    }, 1500);
-  };
+      router.push("/login");
+    }, 2000);
+
+  } catch (err: any) {
+    setError(err.message || "Error registering! Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (success) {
     return (
@@ -116,7 +139,7 @@ export default function RegisterPage() {
                   <input
                     type="text"
                     name="full_name"
-                    placeholder="John Doe"
+                    placeholder="Cynthia Irakoze"
                     value={formData.full_name}
                     onChange={handleChange}
                     required
@@ -133,7 +156,7 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     name="email"
-                    placeholder="john@example.com"
+                    placeholder="cynthia@example.com"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -150,7 +173,7 @@ export default function RegisterPage() {
                   <input
                     type="tel"
                     name="phone_number"
-                    placeholder="078-000-0000"
+                    placeholder="0780000000"
                     value={formData.phone_number}
                     onChange={handleChange}
                     style={inputStyle}

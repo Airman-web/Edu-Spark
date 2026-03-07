@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
-import { UpdateLessonProgressDto, RecordQuizAttemptDto } from './dto/progress.dto';
+import {
+  UpdateLessonProgressDto,
+  RecordQuizAttemptDto,
+} from './dto/progress.dto';
 
 @Injectable()
 export class ProgressService {
@@ -15,7 +18,9 @@ export class ProgressService {
     const completed = progress_percentage >= 100;
 
     // Check if progress already exists
-    const existing = await (this.prisma.studentLessonProgress as any).findUnique({
+    const existing = await (
+      this.prisma.studentLessonProgress as any
+    ).findUnique({
       where: {
         student_id_lesson_id: { student_id: studentId, lesson_id },
       },
@@ -33,9 +38,15 @@ export class ProgressService {
 
       // Award points if just completed
       if (!wasCompleted && completed) {
-        const lesson = await (this.prisma.lesson as any).findUnique({ where: { lesson_id } });
+        const lesson = await (this.prisma.lesson as any).findUnique({
+          where: { lesson_id },
+        });
         if (lesson) {
-          await this.pointsService.addPoints(studentId, Number(lesson.points_reward), `Lesson Completion: ${lesson.title}`);
+          await this.pointsService.addPoints(
+            studentId,
+            Number(lesson.points_reward),
+            `Lesson Completion: ${lesson.title}`,
+          );
         }
       }
       return updated;
@@ -51,9 +62,15 @@ export class ProgressService {
     });
 
     if (completed) {
-      const lesson = await (this.prisma.lesson as any).findUnique({ where: { lesson_id } });
+      const lesson = await (this.prisma.lesson as any).findUnique({
+        where: { lesson_id },
+      });
       if (lesson) {
-        await this.pointsService.addPoints(studentId, Number(lesson.points_reward), `Lesson Completion: ${lesson.title}`);
+        await this.pointsService.addPoints(
+          studentId,
+          Number(lesson.points_reward),
+          `Lesson Completion: ${lesson.title}`,
+        );
       }
     }
 
@@ -71,7 +88,11 @@ export class ProgressService {
     });
 
     // Award points based on quiz score
-    await this.pointsService.addPoints(studentId, dto.score, `Quiz Result: ${attempt.quiz.lesson.title}`);
+    await this.pointsService.addPoints(
+      studentId,
+      dto.score,
+      `Quiz Result: ${attempt.quiz.lesson.title}`,
+    );
 
     return attempt;
   }

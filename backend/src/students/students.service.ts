@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -58,7 +62,9 @@ export class StudentsService {
 
     if (!student) return null;
     if (student.guardian_id !== guardianId) {
-      throw new ForbiddenException('You do not have access to this student profile');
+      throw new ForbiddenException(
+        'You do not have access to this student profile',
+      );
     }
 
     return student;

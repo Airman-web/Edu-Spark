@@ -2,7 +2,10 @@ import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCourseDto {
-  @ApiProperty({ example: 'gg1-550e8400-e29b-41d4-a716-446655440000', description: 'The UUID of the grade group' })
+  @ApiProperty({
+    example: 'gg1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'The UUID of the grade group',
+  })
   @IsString()
   @IsNotEmpty()
   grade_group_id: string;

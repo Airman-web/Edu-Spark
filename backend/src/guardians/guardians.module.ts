@@ -3,7 +3,6 @@ import { GuardiansService } from './guardians.service';
 import { GuardiansController } from './guardians.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
-
 @Module({
   imports: [PrismaModule],
   controllers: [GuardiansController],

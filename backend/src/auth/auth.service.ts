@@ -22,18 +22,26 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const guardian = await this.guardiansService.findByEmail(loginDto.email);
-    
-    if (guardian && (await bcrypt.compare(loginDto.password, guardian.password))) {
+
+    if (
+      guardian &&
+      (await bcrypt.compare(loginDto.password, guardian.password))
+    ) {
       return this.generateToken(guardian, 'guardian');
     }
-    
+
     throw new UnauthorizedException('Invalid credentials');
   }
 
   async studentLogin(studentLoginDto: StudentLoginDto) {
-    const student = await this.studentsService.findByDisplayName(studentLoginDto.display_name);
+    const student = await this.studentsService.findByDisplayName(
+      studentLoginDto.display_name,
+    );
 
-    if (student && (await bcrypt.compare(studentLoginDto.password, (student as any).password))) {
+    if (
+      student &&
+      (await bcrypt.compare(studentLoginDto.password, student.password))
+    ) {
       return this.generateToken(student, 'student');
     }
 
@@ -41,12 +49,12 @@ export class AuthService {
   }
 
   private async generateToken(user: any, role: 'guardian' | 'student') {
-    const payload = { 
-      sub: role === 'guardian' ? user.guardian_id : user.student_id, 
+    const payload = {
+      sub: role === 'guardian' ? user.guardian_id : user.student_id,
       email: role === 'guardian' ? user.email : user.display_name,
-      role: role 
+      role: role,
     };
-    
+
     const userData: any = {
       id: payload.sub,
       full_name: user.full_name,
@@ -61,7 +69,7 @@ export class AuthService {
 
     return {
       access_token: await this.jwtService.signAsync(payload),
-      user: userData
+      user: userData,
     };
   }
 }

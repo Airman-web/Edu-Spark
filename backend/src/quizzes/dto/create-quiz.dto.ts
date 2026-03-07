@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsArray, ValidateNested, IsString, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+  IsString,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -27,7 +33,10 @@ class QuizQuestionDto {
 }
 
 export class CreateQuizDto {
-  @ApiProperty({ example: 'l1-550e8400-e29b-41d4-a716-446655440000', description: 'The UUID of the lesson this quiz belongs to' })
+  @ApiProperty({
+    example: 'l1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'The UUID of the lesson this quiz belongs to',
+  })
   @IsString()
   @IsNotEmpty()
   lesson_id: string;

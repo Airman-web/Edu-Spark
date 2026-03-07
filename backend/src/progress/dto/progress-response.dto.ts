@@ -1,13 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LessonProgressResponseDto {
-  @ApiProperty({ example: 'p1-550e8400-e29b-41d4-a716-446655440000', description: 'Unique progress ID' })
+  @ApiProperty({
+    example: 'p1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Unique progress ID',
+  })
   progress_id: string;
 
-  @ApiProperty({ example: 's1-550e8400-e29b-41d4-a716-446655440000', description: 'Student UUID' })
+  @ApiProperty({
+    example: 's1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Student UUID',
+  })
   student_id: string;
 
-  @ApiProperty({ example: 'l1-550e8400-e29b-41d4-a716-446655440000', description: 'Lesson UUID' })
+  @ApiProperty({
+    example: 'l1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Lesson UUID',
+  })
   lesson_id: string;
 
   @ApiProperty({ example: true })
@@ -18,13 +27,22 @@ export class LessonProgressResponseDto {
 }
 
 export class QuizAttemptResponseDto {
-  @ApiProperty({ example: 'a1-550e8400-e29b-41d4-a716-446655440000', description: 'Unique attempt ID' })
+  @ApiProperty({
+    example: 'a1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Unique attempt ID',
+  })
   attempt_id: string;
 
-  @ApiProperty({ example: 's1-550e8400-e29b-41d4-a716-446655440000', description: 'Student UUID' })
+  @ApiProperty({
+    example: 's1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Student UUID',
+  })
   student_id: string;
 
-  @ApiProperty({ example: 'q1-550e8400-e29b-41d4-a716-446655440000', description: 'Quiz UUID' })
+  @ApiProperty({
+    example: 'q1-550e8400-e29b-41d4-a716-446655440000',
+    description: 'Quiz UUID',
+  })
   quiz_id: string;
 
   @ApiProperty({ example: 85 })

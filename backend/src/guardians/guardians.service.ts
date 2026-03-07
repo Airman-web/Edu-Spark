@@ -9,7 +9,7 @@ export class GuardiansService {
 
   async create(createGuardianDto: CreateGuardianDto) {
     const { password, ...rest } = createGuardianDto;
-    
+
     // Check if email already exists
     const existing = await (this.prisma.guardian as any).findUnique({
       where: { email: rest.email },
