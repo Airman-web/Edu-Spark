@@ -12,29 +12,55 @@ export class StudentsService {
   constructor(private prisma: PrismaService) {}
 
   async create(guardianId: string, createStudentDto: CreateStudentDto) {
-    // Check if display_name already exists
-    const existing = await (this.prisma.student as any).findFirst({
-      where: {
-        display_name: createStudentDto.display_name,
-      },
-    });
+    try {
+      // Check if display_name already exists
+      const existing = await (this.prisma.student as any).findFirst({
+        where: {
+          display_name: createStudentDto.display_name,
+        },
+      });
 
-    if (existing) {
-      throw new ConflictException('Student ID or Display Name already taken');
+      if (existing) {
+        throw new ConflictException('Display Name already taken');
+      }
+
+      // Check if grade group exists
+      const gradeGroup = await (this.prisma.gradeGroup as any).findUnique({
+        where: { grade_group_id: createStudentDto.grade_group_id },
+      });
+
+      if (!gradeGroup) {
+        throw new ConflictException('Grade Group not found');
+      }
+
+      const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
+
+      // Handle date conversion if present
+      const dateOfBirth = createStudentDto.date_of_birth
+        ? new Date(createStudentDto.date_of_birth)
+        : null;
+
+      return await (this.prisma.student as any).create({
+        data: {
+          ...createStudentDto,
+          date_of_birth: dateOfBirth,
+          password: hashedPassword,
+          guardian_id: guardianId,
+        },
+        include: {
+          grade_group: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating student:', error);
+      if (
+        error instanceof ConflictException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+      throw error; // Let Nest handle generic 500 or refine based on code
     }
-
-    const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
-
-    return (this.prisma.student as any).create({
-      data: {
-        ...createStudentDto,
-        password: hashedPassword,
-        guardian_id: guardianId,
-      },
-      include: {
-        grade_group: true,
-      },
-    });
   }
 
   async findByDisplayName(displayName: string) {

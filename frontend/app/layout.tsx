@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Poppins, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,7 +17,14 @@ export const metadata: Metadata = {
   title: "EduSpark — Ignite Young Minds",
   description:
     "EduSpark is an interactive e-learning platform for primary school students in Rwanda. Curriculum-aligned video lessons, gamification, and real-time guardian progress tracking.",
-  keywords: ["EduSpark", "e-learning", "Rwanda", "primary school", "education", "gamification"],
+  keywords: [
+    "EduSpark",
+    "e-learning",
+    "Rwanda",
+    "primary school",
+    "education",
+    "gamification",
+  ],
   authors: [{ name: "Team EduSpark" }],
   openGraph: {
     title: "EduSpark — Ignite Young Minds",
@@ -28,8 +39,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={poppins.variable}>
-      <body className={poppins.className}>{children}</body>
+    <html lang="en" className={cn("font-sans", geist.variable)}>
+      <body className={poppins.className}>
+        {children}
+        <Toaster richColors position="top-right" />
+      </body>
     </html>
   );
 }
