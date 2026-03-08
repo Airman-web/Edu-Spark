@@ -1,5 +1,5 @@
 
-## Getting Started
+## Edu-Spark Frontend
 
 First, run the development server:
 
