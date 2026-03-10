@@ -17,6 +17,10 @@ import {
   AdminCourseResponseDto,
 } from './dto/admin-response.dto';
 import { CreateCourseDto } from './dto/create-course.dto';
+import {
+  RegisterGuardianDto,
+  RegisterStudentDto,
+} from './dto/registration.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -90,5 +94,22 @@ export class AdminController {
   @ApiNotFoundResponse({ description: 'Grade group not found' })
   createCourse(@Body() createCourseDto: CreateCourseDto) {
     return this.adminService.createCourse(createCourseDto);
+  }
+
+  @Post('register-guardian')
+  @ApiOperation({ summary: 'Register a new guardian' })
+  @ApiOkResponse({ description: 'Guardian registered successfully' })
+  @ApiConflictResponse({ description: 'Email or phone number already exists' })
+  registerGuardian(@Body() registerGuardianDto: RegisterGuardianDto) {
+    return this.adminService.registerGuardian(registerGuardianDto);
+  }
+
+  @Post('register-student')
+  @ApiOperation({ summary: 'Register a new student' })
+  @ApiOkResponse({ description: 'Student registered successfully' })
+  @ApiConflictResponse({ description: 'Display name already exists' })
+  @ApiNotFoundResponse({ description: 'Guardian or Grade Group not found' })
+  registerStudent(@Body() registerStudentDto: RegisterStudentDto) {
+    return this.adminService.registerStudent(registerStudentDto);
   }
 }

@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import {
+  RegisterGuardianDto,
+  RegisterStudentDto,
+} from './dto/registration.dto';
 import { Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -133,6 +138,77 @@ export class AdminService {
       }
       throw new InternalServerErrorException(
         'An unexpected error occurred while creating the course.',
+      );
+    }
+  }
+
+  async registerGuardian(data: RegisterGuardianDto) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    try {
+      return await (this.prisma.guardian as any).create({
+        data: {
+          full_name: data.full_name,
+          email: data.email,
+          phone_number: data.phone_number,
+          password: hashedPassword,
+        },
+        select: {
+          guardian_id: true,
+          full_name: true,
+          email: true,
+          phone_number: true,
+          created_at: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            'A guardian with this email or phone number already exists.',
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred during guardian registration.',
+      );
+    }
+  }
+
+  async registerStudent(data: RegisterStudentDto) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    try {
+      return await (this.prisma.student as any).create({
+        data: {
+          full_name: data.full_name,
+          display_name: data.display_name,
+          password: hashedPassword,
+          guardian: {
+            connect: { guardian_id: data.guardian_id },
+          },
+          grade_group: {
+            connect: { grade_group_id: data.grade_group_id },
+          },
+        },
+        include: {
+          guardian: {
+            select: { full_name: true, email: true },
+          },
+          grade_group: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            'A student with this display name already exists.',
+          );
+        }
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Guardian or Grade Group not found.');
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred during student registration.',
       );
     }
   }
