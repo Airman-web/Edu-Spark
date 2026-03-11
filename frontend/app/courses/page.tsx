@@ -187,7 +187,9 @@ export default function CoursesPage() {
       <main style={{ background: "#ffffff", minHeight: "100vh", fontFamily: "Poppins, Nunito, sans-serif" }}>
 
         <section style={{
-          backgroundImage: "linear-gradient(90deg, #131b46, #1b2561)",
+          backgroundImage: "linear-gradient(90deg, rgba(27,37,97,0.10)), url('/images/study2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           paddingTop: "120px",
           paddingBottom: "80px",
           textAlign: "center",
