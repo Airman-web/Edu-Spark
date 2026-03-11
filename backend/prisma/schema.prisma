@@ -19,6 +19,18 @@ model Guardian {
   @@map("guardians")
 }
 
+model SystemAdmin {
+  admin_id      String    @id @default(uuid())
+  full_name     String    @db.VarChar(150)
+  email         String    @unique @db.VarChar(100)
+  password      String
+  role          String    @default("admin")
+  created_at    DateTime  @default(now())
+
+  @@map("system_admins")
+}
+
+
 model GradeGroup {
   grade_group_id String    @id @default(uuid())
   name           String    @unique @db.VarChar(100)

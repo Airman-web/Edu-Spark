@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -27,7 +29,8 @@ import {
 @ApiUnauthorizedResponse({
   description: 'Unauthorized - Invalid or missing token',
 })
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}

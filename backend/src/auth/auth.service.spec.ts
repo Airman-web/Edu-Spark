@@ -4,7 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { GuardiansService } from '../guardians/guardians.service';
 import { StudentsService } from '../students/students.service';
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 jest.mock('bcrypt');
 
@@ -27,6 +30,17 @@ describe('AuthService', () => {
     signAsync: jest.fn(),
   };
 
+  const mockPrismaService = {
+    systemAdmin: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
+  };
+
+  const mockConfigService = {
+    get: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -34,6 +48,8 @@ describe('AuthService', () => {
         { provide: GuardiansService, useValue: mockGuardiansService },
         { provide: StudentsService, useValue: mockStudentsService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
@@ -79,6 +95,25 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
+    it('should successfully login an admin and return a token', async () => {
+      const loginDto = { email: 'admin@example.com', password: 'password123' };
+      const admin = {
+        admin_id: 'a1',
+        email: 'admin@example.com',
+        password: 'hashed_password',
+        full_name: 'Test Admin',
+      };
+
+      mockPrismaService.systemAdmin.findUnique.mockResolvedValue(admin);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      mockJwtService.signAsync.mockResolvedValue('test_admin_token');
+
+      const result = await service.login(loginDto);
+
+      expect(result.access_token).toEqual('test_admin_token');
+      expect(result.user.role).toEqual('admin');
+    });
+
     it('should successfully login a guardian and return a token', async () => {
       const loginDto = { email: 'test@example.com', password: 'password123' };
       const guardian = {
@@ -88,6 +123,7 @@ describe('AuthService', () => {
         full_name: 'Test Guardian',
       };
 
+      mockPrismaService.systemAdmin.findUnique.mockResolvedValue(null);
       mockGuardiansService.findByEmail.mockResolvedValue(guardian);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('test_token');
@@ -96,6 +132,7 @@ describe('AuthService', () => {
 
       expect(result.access_token).toEqual('test_token');
       expect(result.user.email).toEqual('test@example.com');
+      expect(result.user.role).toEqual('guardian');
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
@@ -103,6 +140,7 @@ describe('AuthService', () => {
         email: 'test@example.com',
         password: 'wrong_password',
       };
+      mockPrismaService.systemAdmin.findUnique.mockResolvedValue(null);
       mockGuardiansService.findByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(

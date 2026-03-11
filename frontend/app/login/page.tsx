@@ -64,15 +64,19 @@ export default function LoginPage() {
       throw new Error(data.message || "Login failed");
     }
 
-    // Saving the token
+    // Saving the token and role
     localStorage.setItem("token", data.access_token);
-    localStorage.setItem("role", data.role);
+    localStorage.setItem("role", data.user.role);
+    localStorage.setItem("user", JSON.stringify(data.user));
 
-    console.log("Guardian logged in:", data);
+    console.log("User logged in:", data);
 
-    // redirecting to the guardian dashboard after login successful
-    window.location.href = "/guardian-dashboard";
-
+    // Redirect based on role
+    if (data.user.role === "admin") {
+      window.location.href = "/admin-dashboard";
+    } else {
+      window.location.href = "/guardian-dashboard";
+    }
   } catch (err: any) {
     setError(err.message || "Something went wrong");
   } finally {

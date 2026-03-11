@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { CreateGuardianDto } from '../guardians/dto/create-guardian.dto';
 import { LoginDto } from './dto/login.dto';
 import { StudentLoginDto } from './dto/student-login.dto';
+import { RegisterSystemUserDto } from './dto/register-system-user.dto'; // Added import
 import { GuardianResponseDto } from '../guardians/dto/guardian-response.dto';
 import {
   LoginResponseDto,
@@ -22,7 +23,9 @@ import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
-  ApiResponse,
+  ApiResponse, // Kept ApiResponse for login/student-login
+  ApiCreatedResponse, // Added ApiCreatedResponse
+  ApiOkResponse, // Added ApiOkResponse, though not explicitly used in the diff for existing methods, it's in the provided import list
 } from '@nestjs/swagger';
 
 @ApiTags('auth')
@@ -31,19 +34,22 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
-  @ApiOperation({ summary: 'Register a new guardian' })
-  @ApiResponse({
-    status: 201,
-    description: 'Guardian successfully registered.',
-    type: GuardianResponseDto,
-  })
+  @ApiOperation({ summary: 'Guardian signup' }) // Modified summary
+  @ApiCreatedResponse({ description: 'Guardian registered successfully' }) // Changed from ApiResponse to ApiCreatedResponse
   async signup(@Body() createGuardianDto: CreateGuardianDto) {
     return this.authService.signup(createGuardianDto);
   }
 
+  @Post('register/system')
+  @ApiOperation({ summary: 'System user registration (Admin)' })
+  @ApiCreatedResponse({ description: 'System user registered successfully' })
+  registerSystemUser(@Body() registerSystemUserDto: RegisterSystemUserDto) {
+    return this.authService.registerSystemUser(registerSystemUserDto);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  @ApiOperation({ summary: 'Guardian login' })
+  @ApiOperation({ summary: 'Consolidated login (Guardian & Admin)' })
   @ApiResponse({
     status: 200,
     description: 'Login successful. Returns access token and user info.',
@@ -52,6 +58,7 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
+
 
   @HttpCode(HttpStatus.OK)
   @Post('student-login')
