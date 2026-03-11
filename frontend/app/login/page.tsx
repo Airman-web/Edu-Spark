@@ -71,7 +71,7 @@ export default function LoginPage() {
     console.log("Guardian logged in:", data);
 
     // redirecting to the guardian dashboard after login successful
-    window.location.href = "/guardian/dashboard";
+    window.location.href = "/guardian-dashboard";
 
   } catch (err: any) {
     setError(err.message || "Something went wrong");
@@ -112,7 +112,7 @@ export default function LoginPage() {
     console.log("Student logged in:", data);
 
     // redirecting to the student dashboard after login successful
-    window.location.href = "/student/dashboard";
+    window.location.href = "/student-dashboard";
 
   } catch (err: any) {
     setError(err.message || "Something went wrong");
