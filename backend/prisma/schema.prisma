@@ -56,6 +56,7 @@ model Student {
   lesson_progress   StudentLessonProgress[]
   quiz_attempts     StudentQuizAttempt[]
   points_history    PointsHistory[]
+  enrollments       Enrollment[]
 
   @@map("students")
 }
@@ -69,6 +70,7 @@ model Course {
 
   grade_group    GradeGroup @relation(fields: [grade_group_id], references: [grade_group_id])
   lessons        Lesson[]
+  enrollments    Enrollment[]
 
   @@unique([title, grade_group_id])
   @@map("courses")
@@ -164,4 +166,17 @@ model PointsHistory {
   student        Student  @relation(fields: [student_id], references: [student_id])
 
   @@map("points_history")
+}
+
+model Enrollment {
+  enrollment_id  String   @id @default(uuid())
+  student_id     String
+  course_id      String
+  enrolled_at    DateTime @default(now())
+
+  student        Student  @relation(fields: [student_id], references: [student_id])
+  course         Course   @relation(fields: [course_id], references: [course_id])
+
+  @@unique([student_id, course_id])
+  @@map("enrollments")
 }
