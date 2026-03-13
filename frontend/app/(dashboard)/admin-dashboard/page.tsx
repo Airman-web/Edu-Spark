@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LuShieldCheck,
   LuUsers,
@@ -63,6 +65,21 @@ const recentGuardians = [
 ];
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (!token || role !== "admin") {
+      router.replace("/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, []);
+
+  if (!authorized) return null;
   return (
     <div className="py-6">
       {/* Stats Cards */}
