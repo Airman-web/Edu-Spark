@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,6 +11,7 @@ import {
   ApiUnauthorizedResponse,
   ApiConflictResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import {
   DashboardStatsDto,
@@ -19,6 +20,7 @@ import {
   AdminCourseResponseDto,
 } from './dto/admin-response.dto';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
 import {
   RegisterGuardianDto,
   RegisterStudentDto,
@@ -97,6 +99,32 @@ export class AdminController {
   @ApiNotFoundResponse({ description: 'Grade group not found' })
   createCourse(@Body() createCourseDto: CreateCourseDto) {
     return this.adminService.createCourse(createCourseDto);
+  }
+
+  @Patch('course/:id')
+  @ApiOperation({ summary: 'Update an existing course' })
+  @ApiOkResponse({
+    description: 'Course updated successfully',
+    type: AdminCourseResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Course not found' })
+  @ApiConflictResponse({
+    description: 'Course with this title already exists for the grade group',
+  })
+  updateCourse(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
+    return this.adminService.updateCourse(id, updateCourseDto);
+  }
+
+  @Delete('course/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a course' })
+  @ApiOkResponse({ description: 'Course deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Course not found' })
+  deleteCourse(@Param('id') id: string) {
+    return this.adminService.deleteCourse(id);
   }
 
   @Post('register-guardian')
