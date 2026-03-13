@@ -13,21 +13,34 @@ export class CoursesService {
   }
 
   findAll(gradeGroupId?: string) {
+    const query = {
+      include: {
+        grade_group: true,
+        _count: {
+          select: { lessons: true },
+        },
+      },
+      orderBy: { title: 'asc' },
+    };
+
     if (gradeGroupId) {
       return (this.prisma.course as any).findMany({
+        ...query,
         where: { grade_group_id: gradeGroupId },
-        include: { lessons: true },
       });
     }
-    return (this.prisma.course as any).findMany({
-      include: { lessons: true },
-    });
+    return (this.prisma.course as any).findMany(query);
   }
 
   findOne(id: string) {
     return (this.prisma.course as any).findUnique({
       where: { course_id: id },
-      include: { lessons: true },
+      include: {
+        grade_group: true,
+        _count: {
+          select: { lessons: true },
+        },
+      },
     });
   }
 }
