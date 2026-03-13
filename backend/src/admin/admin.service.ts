@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
 import {
   RegisterGuardianDto,
   RegisterStudentDto,
@@ -138,6 +139,60 @@ export class AdminService {
       }
       throw new InternalServerErrorException(
         'An unexpected error occurred while creating the course.',
+      );
+    }
+  }
+
+  async updateCourse(id: string, data: UpdateCourseDto) {
+    try {
+      const updateData: any = {};
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.grade_group_id !== undefined) {
+        updateData.grade_group = { connect: { grade_group_id: data.grade_group_id } };
+      }
+
+      return await (this.prisma.course as any).update({
+        where: { course_id: id },
+        data: updateData,
+        include: {
+          grade_group: true,
+          _count: {
+            select: { lessons: true },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Course with ID "${id}" not found.`);
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `A course with title "${data.title}" already exists for this grade group.`,
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while updating the course.',
+      );
+    }
+  }
+
+  async deleteCourse(id: string) {
+    try {
+      await (this.prisma.course as any).delete({
+        where: { course_id: id },
+      });
+      return { message: `Course "${id}" deleted successfully.` };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Course with ID "${id}" not found.`);
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while deleting the course.',
       );
     }
   }
