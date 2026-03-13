@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
+import { useEffect } from "react";
 import {
   LuBookOpen,
   LuFileText,
@@ -37,6 +39,23 @@ import {
   AddEditCourseModal,
   DeleteCourseModal,
 } from "@/components/modals/CourseModals";
+
+type BackendCourse = {
+  course_id: string;
+  title: string;
+  description: string;
+  grade_group: {
+    grade_group_id: string;
+    name: string;
+    description: string;
+  };
+  _count: {
+    lessons: number;
+  };
+  created_at: string;
+};
+
+
 
 const stats = [
   { label: "Total Courses", value: 18, icon: LuBookOpen, color: "#3749a9" },
@@ -88,12 +107,199 @@ const sampleCourses: Course[] = [
   },
 ];
 
+
 export default function CoursesPage() {
-  const [courses] = useState<Course[]>(sampleCourses);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewCourse, setViewCourse] = useState<Course | null>(null);
   const [editCourse, setEditCourse] = useState<Course | null>(null);
   const [deleteCourse, setDeleteCourse] = useState<Course | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+const handleAddCourse = async (form: any) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/admin/courses`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        grade_group_id: form.grade_group,
+        title: form.title,
+        description: form.description,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Failed to create course");
+  }
+
+  const data = await res.json();
+
+  const formatted: Course = {
+    course_id: data.course_id,
+    title: data.title,
+    description: data.description,
+    grade_group: data.grade_group?.name || "",
+    grade_group_id: data.grade_group?.grade_group_id || "",
+    lessons_count: data._count?.lessons || 0,
+    created_at: new Date(data.created_at).toLocaleDateString(),
+  };
+
+  setCourses((prev) => [formatted, ...prev]);
+};
+
+const handleEditCourse = async (form: any) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/admin/course/${form.course_id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        grade_group_id: form.grade_group,
+        title: form.title,
+        description: form.description,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Failed to update course");
+  }
+
+  const data = await res.json();
+  console.log("Response status:", res.status);
+  console.log("Response data:", data);
+
+  const formatted: Course = {
+    course_id: data.course_id,
+    title: data.title,
+    description: data.description,
+    grade_group: data.grade_group?.name || "",
+    grade_group_id: data.grade_group?.grade_group_id,
+    lessons_count: data._count?.lessons || 0,
+    created_at: new Date(data.created_at).toLocaleDateString(),
+  };
+
+  setCourses((prev) =>
+    prev.map((c) =>
+      c.course_id === formatted.course_id ? formatted : c
+    )
+  );
+};
+
+const handleDeleteCourse = async () => {
+  if (!deleteCourse) return;
+
+  setDeleting(true);
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/course/${deleteCourse.course_id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Failed to delete course");
+    }
+
+    // Remove from state
+    setCourses((prev) =>
+      prev.filter((c) => c.course_id !== deleteCourse.course_id)
+    );
+
+    toast.success("Course deleted successfully");
+
+  } catch (err: any) {
+    toast.error(err.message || "Something went wrong");
+  }
+
+  finally {
+    setDeleting(false);
+  }
+};
+
+useEffect(() => {
+  const fetchCourses = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/courses`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch courses");
+
+      const data = await res.json();
+
+      // Transforming backend response to match the Course interface
+      const formatted: Course[] = data.map((c: {
+      course_id: string;
+      title: string;
+      description: string;
+      grade_group: {
+        grade_group_id: string;
+        name: string;
+        description: string;
+      };
+      _count: {
+        lessons: number;
+      };
+      created_at: string;
+    }) => ({
+      course_id: c.course_id,
+      title: c.title,
+      description: c.description,
+      grade_group: c.grade_group?.name || "",
+      grade_group_id: c.grade_group?.grade_group_id,
+      lessons_count: c._count?.lessons || 0,
+      created_at: new Date(c.created_at).toLocaleDateString(),
+    }));
+
+      setCourses(formatted);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCourses();
+}, []);
+
+if (loading) {
+  return (
+    <div className="py-6 flex justify-center items-center">
+      Loading courses...
+    </div>
+  );
+}
 
   return (
     <div className="py-6">
@@ -215,19 +421,23 @@ export default function CoursesPage() {
         open={showAdd}
         onClose={() => setShowAdd(false)}
         course={null}
-        onSave={(data) => console.log("Add course:", data)}
+        onSave={handleAddCourse}
       />
+
       <AddEditCourseModal
         open={!!editCourse}
         onClose={() => setEditCourse(null)}
         course={editCourse}
-        onSave={(data) => console.log("Edit course:", data)}
+        onSave={handleEditCourse}
       />
       <DeleteCourseModal
         open={!!deleteCourse}
         onClose={() => setDeleteCourse(null)}
         course={deleteCourse}
-        onConfirm={() => console.log("Delete:", deleteCourse?.course_id)}
+        onConfirm={async () => {
+          await handleDeleteCourse();
+          setDeleteCourse(null);
+        }}
       />
     </div>
   );

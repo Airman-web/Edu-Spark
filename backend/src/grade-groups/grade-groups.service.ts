@@ -21,7 +21,6 @@ export class GradeGroupsService {
     });
   }
 
-  // Initial seed helper or admin endpoint
   async createInitialGroups() {
     const groups = [
       { name: 'P1', description: 'Primary 1' },

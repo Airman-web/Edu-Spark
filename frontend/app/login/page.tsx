@@ -3,6 +3,8 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { useRouter } from "next/navigation";
+
 config.autoAddCss = false;
 
 import { useState } from "react";
@@ -23,6 +25,7 @@ import {
 type Tab = "guardian" | "student";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab]         = useState<Tab>("guardian");
   const [showPassword, setShowPassword]   = useState(false);
 
@@ -64,18 +67,21 @@ export default function LoginPage() {
       throw new Error(data.message || "Login failed");
     }
 
+    console.log("User logged in:", data);
+
     // Saving the token and role
     localStorage.setItem("token", data.access_token);
     localStorage.setItem("role", data.user.role);
+    localStorage.setItem("email", data.user.email);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    console.log("User logged in:", data);
-
-    // Redirect based on role
+    // Redirecting based on role
     if (data.user.role === "admin") {
-      window.location.href = "/admin-dashboard";
+      router.push("/admin-dashboard");
+    } else if (data.user.role === "guardian") {
+      router.push("/guardian-dashboard");
     } else {
-      window.location.href = "/guardian-dashboard";
+      throw new Error("Unknown user role");
     }
   } catch (err: any) {
     setError(err.message || "Something went wrong");
@@ -408,7 +414,7 @@ export default function LoginPage() {
               </>
             )}
 
-            {/* ── STUDENT FORM ──────────────────────────────── */}
+            {/* ── STUDENT FORM  */}
             {activeTab === "student" && (
               <>
                 {/* Context hint */}
@@ -529,7 +535,6 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                {/* Notice: students can't access guardian login */}
                 <div style={{
                   marginTop: "20px",
                   padding: "12px 16px",
@@ -565,7 +570,6 @@ export default function LoginPage() {
   );
 }
 
-/* ─── Shared inline styles ───────────────────────────────────────────── */
 const labelStyle = {
   display: "block",
   fontSize: "0.8rem",
