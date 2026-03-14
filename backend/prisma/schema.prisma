@@ -8,28 +8,27 @@ datasource db {
 }
 
 model Guardian {
-  guardian_id   String    @id @default(uuid())
-  full_name     String    @db.VarChar(150)
-  email         String    @unique @db.VarChar(100)
-  phone_number  String?   @unique @db.VarChar(20)
-  password      String
-  created_at    DateTime  @default(now())
-  students      Student[]
+  guardian_id  String    @id @default(uuid())
+  full_name    String    @db.VarChar(150)
+  email        String    @unique @db.VarChar(100)
+  phone_number String?   @unique @db.VarChar(20)
+  password     String
+  created_at   DateTime  @default(now())
+  students     Student[]
 
   @@map("guardians")
 }
 
 model SystemAdmin {
-  admin_id      String    @id @default(uuid())
-  full_name     String    @db.VarChar(150)
-  email         String    @unique @db.VarChar(100)
-  password      String
-  role          String    @default("admin")
-  created_at    DateTime  @default(now())
+  admin_id   String   @id @default(uuid())
+  full_name  String   @db.VarChar(150)
+  email      String   @unique @db.VarChar(100)
+  password   String
+  role       String   @default("admin")
+  created_at DateTime @default(now())
 
   @@map("system_admins")
 }
-
 
 model GradeGroup {
   grade_group_id String    @id @default(uuid())
@@ -62,120 +61,123 @@ model Student {
 }
 
 model Course {
-  course_id      String     @id @default(uuid())
+  course_id      String   @id @default(uuid())
   grade_group_id String
-  title          String     @db.VarChar(255)
-  description    String?    @db.Text
-  created_at     DateTime   @default(now())
+  title          String   @db.VarChar(255)
+  description    String?  @db.Text
+  created_at     DateTime @default(now())
 
-  grade_group    GradeGroup @relation(fields: [grade_group_id], references: [grade_group_id])
-  lessons        Lesson[]
-  enrollments    Enrollment[]
+  grade_group GradeGroup   @relation(fields: [grade_group_id], references: [grade_group_id])
+  lessons     Lesson[]
+  enrollments Enrollment[]
 
   @@unique([title, grade_group_id])
   @@map("courses")
 }
 
 model Lesson {
-  lesson_id      String     @id @default(uuid())
-  course_id      String
-  title          String     @db.VarChar(255)
-  content_type   String     // enum: 'video', 'reading'
-  content        String     @db.Text
-  points_reward  Decimal    @db.Decimal(10, 2)
+  lesson_id     String  @id @default(uuid())
+  course_id     String
+  title         String  @db.VarChar(255)
+  content_type  String // enum: 'video', 'reading'
+  content       String  @db.Text
+  points_reward Decimal @db.Decimal(10, 2)
 
-  course         Course     @relation(fields: [course_id], references: [course_id])
-  quizzes        Quiz[]
-  progress       StudentLessonProgress[]
+  course   Course                  @relation(fields: [course_id], references: [course_id])
+  quizzes  Quiz[]
+  progress StudentLessonProgress[]
 
   @@unique([title, course_id])
   @@map("lessons")
 }
 
 model Quiz {
-  quiz_id        String     @id @default(uuid())
-  lesson_id      String     @unique
-  total_points   Decimal    @db.Decimal(10, 2)
+  quiz_id            String  @id @default(uuid())
+  lesson_id          String  @unique
+  total_points       Decimal @db.Decimal(10, 2)
+  is_timed           Boolean @default(false)
+  time_limit_seconds Int?
 
-  lesson         Lesson     @relation(fields: [lesson_id], references: [lesson_id])
-  questions      QuizQuestion[]
-  attempts       StudentQuizAttempt[]
+  lesson    Lesson               @relation(fields: [lesson_id], references: [lesson_id])
+  questions QuizQuestion[]
+  attempts  StudentQuizAttempt[]
 
   @@map("quizzes")
 }
 
 model QuizQuestion {
-  question_id    String     @id @default(uuid())
-  quiz_id        String
-  question_text  String     @db.Text
+  question_id   String  @id @default(uuid())
+  quiz_id       String
+  question_text String  @db.Text
+  points        Decimal @db.Decimal(10, 2)
 
-  quiz           Quiz       @relation(fields: [quiz_id], references: [quiz_id])
-  options        QuizOption[]
+  quiz    Quiz         @relation(fields: [quiz_id], references: [quiz_id])
+  options QuizOption[]
 
   @@unique([quiz_id, question_text(length: 500)])
   @@map("quiz_questions")
 }
 
 model QuizOption {
-  option_id      String     @id @default(uuid())
-  question_id    String
-  option_text    String     @db.VarChar(200)
-  is_correct     Boolean
+  option_id   String  @id @default(uuid())
+  question_id String
+  option_text String  @db.VarChar(200)
+  is_correct  Boolean
 
-  question       QuizQuestion @relation(fields: [question_id], references: [question_id])
+  question QuizQuestion @relation(fields: [question_id], references: [question_id])
 
   @@unique([question_id, option_text])
   @@map("quiz_options")
 }
 
 model StudentLessonProgress {
-  progress_id        String   @id @default(uuid())
-  student_id         String
-  lesson_id          String
+  progress_id         String   @id @default(uuid())
+  student_id          String
+  lesson_id           String
   progress_percentage Decimal  @db.Decimal(5, 2)
-  completed          Boolean
-  updated_at         DateTime @default(now()) @updatedAt
+  completed           Boolean
+  updated_at          DateTime @default(now()) @updatedAt
 
-  student            Student  @relation(fields: [student_id], references: [student_id])
-  lesson             Lesson   @relation(fields: [lesson_id], references: [lesson_id])
+  student Student @relation(fields: [student_id], references: [student_id])
+  lesson  Lesson  @relation(fields: [lesson_id], references: [lesson_id])
 
   @@unique([student_id, lesson_id])
   @@map("student_lesson_progress")
 }
 
 model StudentQuizAttempt {
-  attempt_id     String   @id @default(uuid())
-  student_id     String
-  quiz_id        String
-  score          Decimal  @db.Decimal(10, 2)
-  completed_at   DateTime @default(now())
+  attempt_id   String   @id @default(uuid())
+  student_id   String
+  quiz_id      String
+  score        Decimal  @db.Decimal(10, 2)
+  completed_at DateTime @default(now())
 
-  student        Student  @relation(fields: [student_id], references: [student_id])
-  quiz           Quiz     @relation(fields: [quiz_id], references: [quiz_id])
+  student Student @relation(fields: [student_id], references: [student_id])
+  quiz    Quiz    @relation(fields: [quiz_id], references: [quiz_id])
 
   @@map("student_quiz_attempts")
 }
 
 model PointsHistory {
-  points_id      String   @id @default(uuid())
-  student_id     String
-  points         Decimal  @db.Decimal(10, 2)
-  source_type    String   @db.VarChar(50)
-  created_at     DateTime @default(now())
+  points_id   String   @id @default(uuid())
+  student_id  String
+  points      Decimal  @db.Decimal(10, 2)
+  source_type String   @db.VarChar(50)
+  created_at  DateTime @default(now())
 
-  student        Student  @relation(fields: [student_id], references: [student_id])
+  student Student @relation(fields: [student_id], references: [student_id])
 
   @@map("points_history")
 }
 
 model Enrollment {
-  enrollment_id  String   @id @default(uuid())
-  student_id     String
-  course_id      String
-  enrolled_at    DateTime @default(now())
+  enrollment_id String   @id @default(uuid())
+  student_id    String
+  course_id     String
+  enrolled_at   DateTime @default(now())
 
-  student        Student  @relation(fields: [student_id], references: [student_id])
-  course         Course   @relation(fields: [course_id], references: [course_id])
+  student Student @relation(fields: [student_id], references: [student_id])
+  course  Course  @relation(fields: [course_id], references: [course_id])
 
   @@unique([student_id, course_id])
   @@map("enrollments")

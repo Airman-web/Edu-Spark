@@ -4,6 +4,9 @@ import {
   ValidateNested,
   IsString,
   IsBoolean,
+  IsNumber,
+  IsOptional,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -25,6 +28,12 @@ class QuizQuestionDto {
   @IsNotEmpty()
   question_text: string;
 
+  @ApiProperty({ example: 10 })
+  @IsNumber()
+  @IsNotEmpty()
+  @Min(0)
+  points: number;
+
   @ApiProperty({ type: [QuizOptionDto] })
   @IsArray()
   @ValidateNested({ each: true })
@@ -44,6 +53,17 @@ export class CreateQuizDto {
   @ApiProperty({ example: 100 })
   @IsNotEmpty()
   total_points: number;
+
+  @ApiProperty({ example: false })
+  @IsBoolean()
+  @IsOptional()
+  is_timed?: boolean;
+
+  @ApiProperty({ example: 600, description: 'Time limit in seconds if timed' })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  time_limit_seconds?: number;
 
   @ApiProperty({ type: [QuizQuestionDto] })
   @IsArray()

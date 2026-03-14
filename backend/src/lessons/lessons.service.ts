@@ -9,6 +9,9 @@ export class LessonsService {
   create(createLessonDto: CreateLessonDto) {
     return (this.prisma.lesson as any).create({
       data: createLessonDto,
+      include: {
+        course: { select: { title: true, description: true, course_id: true } }
+      }
     });
   }
 
@@ -16,15 +19,25 @@ export class LessonsService {
     if (courseId) {
       return (this.prisma.lesson as any).findMany({
         where: { course_id: courseId },
+        include: { course: { select: { title: true, description: true, course_id: true } } },
       });
     }
-    return (this.prisma.lesson as any).findMany();
+    return (this.prisma.lesson as any).findMany({
+      include: { course: { select: { title: true, description: true, course_id: true } } },
+    });
   }
 
   findOne(id: string) {
     return (this.prisma.lesson as any).findUnique({
       where: { lesson_id: id },
-      include: { quizzes: true },
+      include: { quizzes: true, course: { select: { title: true, description: true, course_id: true } } },
+    });
+  }
+
+  findLessonsByCourseId(courseId: string) {
+    return (this.prisma.lesson as any).findMany({
+      where: { course_id: courseId },
+      include: { course: { select: { title: true, description: true, course_id: true } } },
     });
   }
 }

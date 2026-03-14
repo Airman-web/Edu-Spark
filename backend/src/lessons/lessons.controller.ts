@@ -47,4 +47,15 @@ export class LessonsController {
   findOne(@Param('id') id: string) {
     return (this.lessonsService as any).findOne(id);
   }
+
+  @Get('course/:courseId')
+  @ApiOperation({ summary: 'Get all lessons for a specific course' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return list of lessons.',
+    type: [LessonResponseDto],
+  })
+  findLessonsByCourseId(@Param('courseId') courseId: string) {
+    return (this.lessonsService as any).findLessonsByCourseId(courseId);
+  }
 }
