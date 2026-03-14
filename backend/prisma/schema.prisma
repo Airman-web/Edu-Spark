@@ -65,7 +65,7 @@ model Course {
   course_id      String     @id @default(uuid())
   grade_group_id String
   title          String     @db.VarChar(255)
-  description    String?
+  description    String?    @db.Text
   created_at     DateTime   @default(now())
 
   grade_group    GradeGroup @relation(fields: [grade_group_id], references: [grade_group_id])
