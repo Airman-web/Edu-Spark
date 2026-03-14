@@ -72,6 +72,12 @@ function getVisualForCourse(courseId: string) {
   return { icon, color };
 }
 
+function truncate(text: string, maxLength: number) {
+  if (!text) return "";
+  return text.length > maxLength
+    ? text.slice(0, maxLength) + "..."
+    : text;
+}
 
 export default function CoursesPage() {
   const [selectedGroup, setSelectedGroup] = useState("All");
@@ -294,7 +300,7 @@ export default function CoursesPage() {
                     }}>
                       {course.title}
                     </h3>
-                    <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
+                    <p className="line-clamp-3" style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
                       {course.description}
                     </p>
                   </div>
@@ -339,12 +345,24 @@ export default function CoursesPage() {
             })}
             </div>
 
-            {filtered.length === 0 && (
-              <div style={{ textAlign: "center", padding: "80px 0", color: "#7b82a8" }}>
-                <FontAwesomeIcon icon={faBookOpen} style={{ width: "48px", height: "48px", marginBottom: "16px", opacity: 0.3 }} />
-                <p style={{ fontSize: "1rem", fontWeight: 600 }}>No courses found for this grade group.</p>
+            {loading ? (
+              <div className="flex flex-col justify-center items-center py-20 gap-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+                <p className="text-sm font-semibold text-gray-500 animate-pulse">
+                  Loading available courses...
+                </p>
               </div>
-            )}
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "80px 0", color: "#7b82a8" }}>
+                <FontAwesomeIcon
+                  icon={faBookOpen}
+                  style={{ width: "48px", height: "48px", marginBottom: "16px", opacity: 0.3 }}
+                />
+                <p style={{ fontSize: "1rem", fontWeight: 600 }}>
+                  No courses found for this grade group.
+                </p>
+              </div>
+            ) : null}
 
           </div>
         </section>

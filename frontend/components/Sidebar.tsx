@@ -17,6 +17,7 @@ import {
   LuTrendingUp,
   LuCalendar,
   LuBell,
+  LuFileText,
 } from "react-icons/lu";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { toast } from "sonner";
@@ -64,7 +65,15 @@ const adminMain: NavItem[] = [
     icon: LuBookOpen,
     path: `${adminRoute}/courses`,
   },
+
+  {
+    id: "lessons",
+    label: "Lessons",
+    icon: LuFileText,
+    path: `${adminRoute}/lessons`,
+  },
 ];
+
 
 
 // Guardian nav

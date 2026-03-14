@@ -15,6 +15,7 @@ export class QuizzesService {
         questions: {
           create: questions.map((q) => ({
             question_text: q.question_text,
+            points: q.points,
             options: {
               create: q.options.map((o) => ({
                 option_text: o.option_text,

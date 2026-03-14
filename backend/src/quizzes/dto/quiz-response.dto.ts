@@ -24,6 +24,9 @@ class QuizQuestionResponseDto {
   @ApiProperty({ example: 'What is the capital of France?' })
   question_text: string;
 
+  @ApiProperty({ example: 10 })
+  points: number;
+
   @ApiProperty({ type: [QuizOptionResponseDto] })
   options: QuizOptionResponseDto[];
 }
@@ -43,6 +46,12 @@ export class QuizResponseDto {
 
   @ApiProperty({ example: 100 })
   total_points: number;
+
+  @ApiProperty({ example: false })
+  is_timed: boolean;
+
+  @ApiProperty({ example: 600, required: false })
+  time_limit_seconds?: number;
 
   @ApiProperty({ type: [QuizQuestionResponseDto] })
   questions: QuizQuestionResponseDto[];

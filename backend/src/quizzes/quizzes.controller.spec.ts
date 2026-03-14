@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QuizzesController } from './quizzes.controller';
 import { QuizzesService } from './quizzes.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 
 describe('QuizzesController', () => {
   let controller: QuizzesController;
@@ -14,7 +16,12 @@ describe('QuizzesController', () => {
           useValue: {},
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<QuizzesController>(QuizzesController);
   });
