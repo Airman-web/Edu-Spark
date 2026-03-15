@@ -29,6 +29,7 @@ export interface Student {
   created_at: string;
 }
 
+
 function FormField({
   id,
   label,
@@ -87,14 +88,26 @@ export function ViewStudentModal({
   student,
 }: ViewStudentModalProps) {
   if (!student) return null;
+  const formatDate = (dateString?: string) => {
+  if (!dateString) return "—";
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "—";
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
   const fields = [
     { label: "Full Name", value: student.full_name },
     { label: "Display Name", value: student.display_name },
     { label: "Grade Group", value: student.grade_group },
-    { label: "Date of Birth", value: student.date_of_birth || "—" },
     { label: "Disability Info", value: student.disability_info || "None" },
     { label: "Guardian", value: student.guardian_name },
-    { label: "Created At", value: student.created_at },
+    { label: "Date of Birth", value: formatDate(student.date_of_birth) },
+    { label: "Created At", value: formatDate(student.created_at) },
   ];
 
   return (
@@ -166,6 +179,7 @@ export function AddEditStudentModal({
     disability_info: "",
     password: "",
   });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (student) {
@@ -173,7 +187,9 @@ export function AddEditStudentModal({
         full_name: student.full_name,
         display_name: student.display_name,
         grade_group: student.grade_group,
-        date_of_birth: student.date_of_birth,
+        date_of_birth: student.date_of_birth
+          ? student.date_of_birth.split("T")[0]
+          : "",
         disability_info: student.disability_info,
         password: "",
       });
@@ -189,10 +205,15 @@ export function AddEditStudentModal({
     }
   }, [student, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(form);
-    onClose();
+
+    try {
+      setSaving(true);
+      await onSave(form); // wait for parent to finish
+    } finally {
+      setSaving(false);
+    }
   };
   const isEdit = !!student;
 
@@ -284,8 +305,12 @@ export function AddEditStudentModal({
             </Button>
             <Button
               type="submit"
-              className="bg-[#3749a9] hover:bg-[#2d3b8e] text-white"
+              disabled={saving}
+              className="bg-[#3749a9] hover:bg-[#2d3b8e] text-white flex items-center justify-center gap-2"
             >
+              {saving && (
+                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+              )}
               {isEdit ? "Save Changes" : "Add Student"}
             </Button>
           </div>

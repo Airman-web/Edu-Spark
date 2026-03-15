@@ -99,7 +99,7 @@ const guardianMain: NavItem[] = [
   },
   {
     id: "students",
-    label: "My Students",
+    label: "My Children",
     icon: LuGraduationCap,
     path: `${guardianRoute}/students`,
   },

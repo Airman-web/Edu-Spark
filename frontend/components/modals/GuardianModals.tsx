@@ -18,6 +18,9 @@ export interface Guardian {
   phone_number: string;
   students_count: number;
   created_at: string;
+  _count: {
+    students: number;
+  };
 }
 
 
@@ -77,8 +80,13 @@ export function ViewGuardianModal({ open, onClose, guardian }: ViewGuardianModal
     { label: "Full Name", value: guardian.full_name },
     { label: "Email", value: guardian.email },
     { label: "Phone", value: guardian.phone_number || "—" },
-    { label: "Students", value: String(guardian.students_count) },
-    { label: "Created At", value: guardian.created_at },
+    { label: "Students", value: String(guardian._count?.students ?? 0) },
+    {
+      label: "Created At",
+      value: guardian.created_at
+        ? new Date(guardian.created_at).toLocaleDateString("en-GB")
+        : "—",
+    },
   ];
 
   return (
