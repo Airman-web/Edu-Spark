@@ -18,6 +18,7 @@ import {
   LuCalendar,
   LuBell,
   LuFileText,
+  LuUser,
 } from "react-icons/lu";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { toast } from "sonner";
@@ -124,6 +125,12 @@ const studentMain: NavItem[] = [
     label: "Leaderboard",
     icon: LuTrophy,
     path: `${studentRoute}/leaderboard`,
+  },
+  {
+    id: "profile",
+    label: "Profile",
+    icon: LuUser,
+    path: `${studentRoute}/profile`,
   },
 ];
 
