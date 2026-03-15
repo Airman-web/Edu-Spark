@@ -79,12 +79,15 @@ export default function GuardiansPage() {
       header: "Phone",
     },
     {
-      accessorKey: "students_count",
       header: "Students",
+      accessorFn: (row) => row._count?.students ?? 0
     },
     {
-      accessorKey: "created_at",
       header: "Created At",
+      cell: ({ row }) =>
+        row.original.created_at
+          ? new Date(row.original.created_at).toLocaleDateString("en-GB")
+          : "—",
     },
   ];
 
@@ -346,7 +349,7 @@ export default function GuardiansPage() {
             const token = localStorage.getItem("token");
 
             const res = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/admin/guardians/${deleteGuardian?.guardian_id}`,
+              `${process.env.NEXT_PUBLIC_API_URL}/admin/guardian/${deleteGuardian?.guardian_id}`,
               {
                 method: "DELETE",
                 headers: {

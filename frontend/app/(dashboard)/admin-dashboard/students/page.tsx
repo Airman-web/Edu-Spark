@@ -49,6 +49,7 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "sonner";
 
+
 type BackendStudent = {
   student_id: string;
   full_name: string;
@@ -114,8 +115,50 @@ export default function StudentsPage() {
     {
       accessorKey: "created_at",
       header: "Created At",
-    },
+      cell: ({ row }) => formatDate(row.original.created_at),
+    }
   ];
+
+  const handleEditStudent = async (data: Record<string, string>) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/students/${editStudent?.student_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to update student");
+      }
+
+      const updated = await res.json();
+
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.student_id === updated.student_id
+            ? {
+                ...s,
+                ...updated,
+              }
+            : s
+        )
+      );
+
+      toast.success("Student updated successfully");
+      setEditStudent(null);
+    } catch (err: any) {
+      toast.error(err.message || "Update failed");
+      throw err;
+    }
+  };
 
   const table = useReactTable({
     data: students,
@@ -156,7 +199,7 @@ export default function StudentsPage() {
           date_of_birth: s.date_of_birth,
           disability_info: s.disability_info ?? "",
           guardian_name: s.guardian?.full_name ?? "",
-          created_at: formatDate(s.created_at),
+          created_at: s.created_at,
         }));
 
         setStudents(formattedStudents);
@@ -202,9 +245,13 @@ export default function StudentsPage() {
   }).length;
 
   // students with disabilities
-  const withDisabilities = students.filter(
-    (s) => s.disability_info && s.disability_info.trim() !== ""
-  ).length;
+  const withDisabilities = students.filter((s) => {
+    if (!s.disability_info) return false;
+
+    const value = String(s.disability_info).trim().toLowerCase();
+
+    return value !== "" && value !== "null" && value !== "none";
+  }).length;
 
   // new this month
   const newThisMonth = students.filter((s) => {
@@ -351,14 +398,6 @@ export default function StudentsPage() {
                           <LuPencil size={14} className="mr-2" />
                           Edit
                         </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => setDeleteStudent(row.original)}
-                        >
-                          <LuTrash2 size={14} className="mr-2" />
-                          Delete
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -403,16 +442,10 @@ export default function StudentsPage() {
         student={viewStudent}
       />
       <AddEditStudentModal
-        open={showAdd}
-        onClose={() => setShowAdd(false)}
-        student={null}
-        onSave={(data) => console.log("Add student:", data)}
-      />
-      <AddEditStudentModal
         open={!!editStudent}
         onClose={() => setEditStudent(null)}
         student={editStudent}
-        onSave={(data) => console.log("Edit student:", data)}
+        onSave={handleEditStudent}
       />
       <DeleteStudentModal
         open={!!deleteStudent}

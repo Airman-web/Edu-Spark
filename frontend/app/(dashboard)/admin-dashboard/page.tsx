@@ -42,6 +42,16 @@ const stats = [
   { label: "Active Students", value: 275, icon: LuUserCheck, color: "#1b9e5a" },
 ];
 
+const handleUnauthorized = (res: Response) => {
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "../login";
+    return true;
+  }
+  return false;
+};
+
 
 export default function AdminPage() {
   const router = useRouter();
@@ -62,7 +72,7 @@ export default function AdminPage() {
     const role = localStorage.getItem("role");
 
     if (!token || role !== "admin") {
-      router.replace("/login");
+      window.location.href = "../login";
       return;
     }
 
@@ -82,7 +92,11 @@ export default function AdminPage() {
         }
       );
 
-      if (!resStats.ok) throw new Error("Failed to fetch stats");
+      if (handleUnauthorized(resStats)) return;
+
+      if (!resStats.ok) {
+        throw new Error("Failed to fetch stats");
+      }
 
       const statsData = await resStats.json();
 
