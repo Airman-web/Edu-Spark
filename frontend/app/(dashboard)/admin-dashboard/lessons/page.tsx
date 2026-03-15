@@ -94,6 +94,7 @@ export default function LessonsPage() {
       if (!res.ok) throw new Error("Failed to fetch lessons");
 
       const data = await res.json();
+      console.log("LESSONS FROM API:", data);
 
       const formatted: Lesson[] = data.map((l: BackendLesson) => ({
         lesson_id: l.lesson_id,
@@ -103,7 +104,7 @@ export default function LessonsPage() {
         points_reward: l.points_reward,
         course_title: l.course?.title || "",
         course_id: l.course?.course_id || "",
-        created_at: new Date(l.created_at).toLocaleDateString(),
+        created_at: l.created_at,
       }));
 
       setLessons(formatted);
@@ -247,7 +248,15 @@ export default function LessonsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>{l.points_reward}</TableCell>
-                <TableCell>{l.created_at}</TableCell>
+                <TableCell>
+                  {l.created_at && !isNaN(new Date(l.created_at).getTime())
+                    ? new Date(l.created_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

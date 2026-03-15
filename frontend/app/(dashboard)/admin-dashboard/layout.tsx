@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import React, { useState, useEffect } from 'react';
 
+
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,6 +12,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [autoCollapsed, setAutoCollapsed] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (!token || role !== "admin") {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    
     const handleResize = () => {
       const width = window.innerWidth;
       const mobile = width < 768;
