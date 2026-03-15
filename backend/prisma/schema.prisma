@@ -50,6 +50,7 @@ model Student {
   date_of_birth     DateTime?               @db.Date
   disability_info   String?                 @db.VarChar(100)
   profile_image_url String?
+  created_at        DateTime                @default(now())
   guardian          Guardian                @relation(fields: [guardian_id], references: [guardian_id])
   grade_group       GradeGroup              @relation(fields: [grade_group_id], references: [grade_group_id])
   lesson_progress   StudentLessonProgress[]

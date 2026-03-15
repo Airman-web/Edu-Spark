@@ -130,6 +130,9 @@ export class AdminLessonResponseDto {
   @ApiProperty({ example: 10 })
   points_reward: number;
 
+  @ApiProperty({ example: '2026-03-05T00:00:00.000Z' })
+  created_at: Date;
+
   @ApiProperty({ type: CourseSummaryDto })
   course: CourseSummaryDto;
 }
