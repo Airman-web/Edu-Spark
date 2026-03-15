@@ -103,6 +103,9 @@ export class AdminService {
         email: true,
         phone_number: true,
         created_at: true,
+        _count: {
+          select: { students: true },
+        },
       },
     });
   }
@@ -227,6 +230,24 @@ export class AdminService {
       }
       throw new InternalServerErrorException(
         'An unexpected error occurred during guardian registration.',
+      );
+    }
+  }
+
+  async deleteGuardian(id: string) {
+    try {
+      await (this.prisma.guardian as any).delete({
+        where: { guardian_id: id },
+      });
+      return { message: `Guardian "${id}" deleted successfully.` };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Guardian with ID "${id}" not found.`);
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while deleting the guardian.',
       );
     }
   }

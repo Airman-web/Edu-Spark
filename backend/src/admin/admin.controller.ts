@@ -138,6 +138,15 @@ export class AdminController {
     return this.adminService.registerGuardian(registerGuardianDto);
   }
 
+  @Delete('guardian/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a guardian' })
+  @ApiOkResponse({ description: 'Guardian deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Guardian not found' })
+  deleteGuardian(@Param('id') id: string) {
+    return this.adminService.deleteGuardian(id);
+  }
+
   @Post('register-student')
   @ApiOperation({ summary: 'Register a new student' })
   @ApiOkResponse({ description: 'Student registered successfully' })
