@@ -121,75 +121,72 @@ export default function CreateQuizPage() {
 
   const handleSubmit = async () => {
     if (questions.length === 0) {
-      toast.error("Quiz must contain at least one question");
-      return;
+        toast.error("Quiz must contain at least one question");
+        return;
     }
 
     for (const q of questions) {
-      if (!q.question_text.trim()) {
+        if (!q.question_text.trim()) {
         toast.error("All questions must have text");
         return;
-      }
+        }
 
-      if (q.options.length < 2) {
-        toast.error("Each question must have at least 2 options");
-        return;
-      }
-
-      if (!q.options.some((opt) => opt.is_correct)) {
+        if (!q.options.some((opt) => opt.is_correct)) {
         toast.error("Each question must have one correct answer selected");
         return;
-      }
+        }
 
-      if (!q.points || q.points <= 0) {
+        if (!q.points || q.points <= 0) {
         toast.error("Each question must have valid points");
         return;
-      }
+        }
     }
 
-    if (isTimed && (!quizTimer || quizTimer <= 0)) {
-      toast.error("Please set a valid quiz timer");
-      return;
+    const payload: any = {
+        lesson_id: lessonId,
+        total_points: totalPoints,
+        is_timed: isTimed,
+        time_limit_seconds: isTimed ? quizTimer : 1,
+        questions,
+    };
+
+    if (isTimed) {
+        if (!quizTimer || quizTimer <= 0) {
+        toast.error("Please set a valid quiz timer");
+        return;
+        }
+
+        payload.time_limit_seconds = quizTimer;
     }
 
     setUploading(true);
 
     try {
-      const payload: any = {
-        lesson_id: lessonId,
-        total_points: totalPoints,
-        questions,
-      };
+        const token = localStorage.getItem("token");
 
-      if (isTimed) {
-        payload.duration_seconds = quizTimer;
-      }
-
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(
+        const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/quizzes`,
         {
-          method: "POST",
-          headers: {
+            method: "POST",
+            headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
+            },
+            body: JSON.stringify(payload),
         }
-      );
+        );
 
-      if (!res.ok) {
+        if (!res.ok) {
         throw new Error("Failed to create quiz");
-      }
+        }
 
-      toast.success("Quiz created successfully");
+        toast.success("Quiz created successfully");
     } catch (err: any) {
-      toast.error(err.message || "Error saving quiz");
+        toast.error(err.message || "Error saving quiz");
     } finally {
-      setUploading(false);
+        setUploading(false);
     }
-  };
+    };
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-8">

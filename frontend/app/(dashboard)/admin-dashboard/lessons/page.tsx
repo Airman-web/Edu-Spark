@@ -83,7 +83,7 @@ export default function LessonsPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/lessons`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/lesson`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -123,7 +123,7 @@ export default function LessonsPage() {
     const token = localStorage.getItem("token");
 
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/lessons`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/lesson`,
       {
         method: "POST",
         headers: {
@@ -143,15 +143,18 @@ export default function LessonsPage() {
   const handleEditLesson = async (form: any) => {
     const token = localStorage.getItem("token");
 
+    // Remove lesson_id from body
+    const { lesson_id, ...cleanBody } = form;
+
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/lessons/${form.lesson_id}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/lesson/${lesson_id}`,
       {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(cleanBody),
       }
     );
 
@@ -170,7 +173,7 @@ export default function LessonsPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/lessons/${deleteLesson.lesson_id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/lesson/${deleteLesson.lesson_id}`,
         {
           method: "DELETE",
           headers: {

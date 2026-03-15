@@ -72,6 +72,18 @@ const adminMain: NavItem[] = [
     icon: LuFileText,
     path: `${adminRoute}/lessons`,
   },
+  {
+    id: "quizzes",
+    label: "Quizzes",
+    icon: LuFileText, 
+    path: `${adminRoute}/quizzes`,
+  },
+  {
+    id: "leaderboard",
+    label: "Leaderboard",
+    icon: LuTrophy,
+    path: `${adminRoute}/leaderboard`,
+  },
 ];
 
 
@@ -127,37 +139,20 @@ const studentMain: NavItem[] = [
   },
 ];
 
-const sharedBottom = (base: string): NavItem[] => [
-  {
-    id: "settings",
-    label: "Settings",
-    icon: LuSettings,
-    path: `${base}/settings`,
-  },
-  {
-    id: "support",
-    label: "Support",
-    icon: LuHeadphones,
-    path: `${base}/support`,
-  },
-];
 
 function usePortal(pathname: string) {
   if (pathname.startsWith(guardianRoute))
     return {
       main: guardianMain,
-      bottom: sharedBottom(guardianRoute),
       base: guardianRoute,
     };
   if (pathname.startsWith(studentRoute))
     return {
       main: studentMain,
-      bottom: sharedBottom(studentRoute),
       base: studentRoute,
     };
   return {
     main: adminMain,
-    bottom: sharedBottom(adminRoute),
     base: adminRoute,
   };
 }
@@ -167,7 +162,6 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
   const pathname = usePathname();
   const {
     main: mainNav,
-    bottom: bottomNav,
     base: portalBase,
   } = usePortal(pathname);
 
@@ -313,9 +307,6 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
         className={`shrink-0 pt-2 pb-1 ${mobile || !collapsed ? "px-4" : "px-3"}`}
         style={{ borderTop: "1.5px solid #e4e6f0" }}
       >
-        {bottomNav.map((item) => (
-          <NavBtn key={item.id} item={item} exact />
-        ))}
       </div>
 
       {/* Profile */}
@@ -372,24 +363,6 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
               className="absolute bottom-full left-0 mb-1 w-44 bg-white rounded-xl border border-[#e4e6f0] py-1 z-50 overflow-hidden"
               style={{ boxShadow: "0 8px 24px rgba(19,27,70,0.12)" }}
             >
-              <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  navigate(`${portalBase}/profile`);
-                }}
-                className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#3d4566] hover:bg-[#f0f2fa] transition-colors"
-              >
-                <LuSettings size={13} color="#7b82a8" /> View Profile
-              </button>
-              <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  navigate(`${portalBase}/settings`);
-                }}
-                className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#3d4566] hover:bg-[#f0f2fa] transition-colors"
-              >
-                <LuSettings size={13} color="#7b82a8" /> Settings
-              </button>
               <div className="h-px bg-[#e4e6f0] my-1 mx-3" />
               <button
                 onClick={() => {

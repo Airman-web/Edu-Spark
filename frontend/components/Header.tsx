@@ -8,18 +8,10 @@ interface HeaderProps {
   sidebarWidth: number;
 }
 
-const notifications = [
-  { id: 1, title: "New student enrolled", desc: "Alice Mukamana registered a new student.", time: "2 min ago", read: false },
-  { id: 2, title: "Course updated", desc: "Mathematics 101 syllabus was updated.", time: "1 hour ago", read: false },
-  { id: 3, title: "Guardian request", desc: "Jean Habimana submitted an intent form.", time: "3 hours ago", read: false },
-  { id: 4, title: "System update", desc: "Platform maintenance scheduled for tonight.", time: "Yesterday", read: true },
-  { id: 5, title: "New course added", desc: "Science 201 has been added to the catalog.", time: "2 days ago", read: true },
-];
-
 export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = 0;
 
   // Close panel on outside click
   useEffect(() => {
@@ -59,20 +51,14 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
           <LuSearch size={16} color="#7b82a8" />
         </button>
 
-        <div className="hidden sm:block flex-1 max-w-lg">
-          <button
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#f0f2fa] border border-[#e4e6f0] hover:border-[#b8bde8] transition-colors focus:outline-none"
-            aria-label="Search"
-          >
-            <LuSearch size={15} color="#7b82a8" className="shrink-0" />
-            <span className="text-[13px] text-[#7b82a8] font-medium select-none flex-1 text-left">
-              Search students, courses…
-            </span>
-            <span className="hidden md:flex items-center text-[10px] font-bold text-[#9da5c8] bg-white border border-[#e4e6f0] rounded-md px-2 py-1 leading-none shrink-0">
-              ⌘K
-            </span>
-          </button>
-        </div>
+       <div className="hidden sm:flex flex-1 flex-col">
+        <h1 className="text-[15px] font-semibold text-[#0f1535]">
+          Welcome back 👋
+        </h1>
+        <p className="text-[12px] text-[#7b82a8]">
+          Manage students, guardians, courses and analytics
+        </p>
+      </div>
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -132,38 +118,21 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
         </div>
 
         {/* Notification list */}
-        <div className="flex-1 overflow-y-auto">
-          {notifications.map((notif) => (
-            <div
-              key={notif.id}
-              className={`px-5 py-4 border-b border-[#f0f2fa] hover:bg-[#f7f8fc] transition-colors cursor-pointer ${
-                !notif.read ? "bg-[#f7f8fc]" : ""
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                    !notif.read ? "bg-[#3749a9]" : "bg-transparent"
-                  }`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[13px] leading-snug ${!notif.read ? "font-bold text-[#0f1535]" : "font-semibold text-[#3d4566]"}`}>
-                    {notif.title}
-                  </p>
-                  <p className="text-[12px] text-[#7b82a8] mt-0.5 leading-relaxed">{notif.desc}</p>
-                  <p className="text-[11px] text-[#9da5c8] mt-1">{notif.time}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <LuBell size={36} className="text-[#c2c7e6] mb-3" />
+          <p className="text-[14px] font-semibold text-[#0f1535]">
+            No notifications yet
+          </p>
+          <p className="text-[12px] text-[#7b82a8] mt-1">
+            Notifications will appear here once activity is available.
+          </p>
         </div>
 
         {/* Panel footer */}
-        <div className="shrink-0 px-5 py-3 border-t border-[#e4e6f0]">
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#f0f2fa] hover:bg-[#e4e6f0] transition-colors text-[13px] font-semibold text-[#3d4566] focus:outline-none">
-            <LuCheck size={14} />
-            Mark all as read
-          </button>
+        <div className="shrink-0 px-5 py-4 border-t border-[#e4e6f0] text-center">
+          <p className="text-[12px] text-[#9da5c8]">
+            Notification system coming soon
+          </p>
         </div>
       </div>
     </>
