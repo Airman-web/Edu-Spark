@@ -290,7 +290,7 @@ export default function QuizPage() {
                         key={i}
                         onClick={() => setCurrentIndex(i)}
                         style={{
-                          width: "32px", height: "32px", borderRadius: "50%", border: "none",
+                          width: "32px", height: "32px", borderRadius: "50%",
                           cursor: "pointer", fontWeight: 700, fontSize: "0.8rem",
                           background: i === currentIndex
                             ? "linear-gradient(135deg, #1b2561, #3749a9)"
@@ -298,7 +298,9 @@ export default function QuizPage() {
                             ? "#eef0fa"
                             : "#ffffff",
                           color: i === currentIndex ? "#ffffff" : "#3749a9",
-                          border: selected[QUESTIONS[i].id] && i !== currentIndex
+                          border: i === currentIndex 
+                            ? "none" 
+                            : selected[QUESTIONS[i].id]
                             ? "2px solid #3749a9" : "2px solid #eef0fa",
                           transition: "all 0.2s",
                         }}
