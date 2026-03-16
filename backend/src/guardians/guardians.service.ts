@@ -61,4 +61,27 @@ export class GuardiansService {
       },
     });
   }
+
+  async getStudentPerformance(guardianId: string) {
+    const students = await (this.prisma.student as any).findMany({
+      where: { guardian_id: guardianId },
+      include: {
+        points_history: true,
+      },
+    });
+
+    return students.map((student) => {
+      const totalPoints = student.points_history.reduce(
+        (sum, record) => sum + Number(record.points),
+        0
+      );
+      
+      const { password, points_history, ...studentData } = student;
+      
+      return {
+        ...studentData,
+        total_points: totalPoints,
+      };
+    });
+  }
 }

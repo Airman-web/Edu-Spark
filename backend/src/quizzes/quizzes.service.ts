@@ -48,8 +48,8 @@ export class QuizzesService {
     }
   }
 
-  findOne(id: string) {
-    return (this.prisma.quiz as any).findUnique({
+  async findOne(id: string) {
+    const quiz = await (this.prisma.quiz as any).findUnique({
       where: { quiz_id: id },
       include: {
         questions: {
@@ -59,10 +59,19 @@ export class QuizzesService {
         },
       },
     });
+
+    if (quiz) {
+      const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+        by: ['student_id'],
+        where: { quiz_id: quiz.quiz_id },
+      });
+      return { ...quiz, studentsTakenCount: uniqueStudents.length };
+    }
+    return null;
   }
 
-  findOneByLesson(lessonId: string) {
-    return (this.prisma.quiz as any).findUnique({
+  async findOneByLesson(lessonId: string) {
+    const quiz = await (this.prisma.quiz as any).findFirst({
       where: { lesson_id: lessonId },
       include: {
         questions: {
@@ -72,5 +81,60 @@ export class QuizzesService {
         },
       },
     });
+
+    if (quiz) {
+      const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+        by: ['student_id'],
+        where: { quiz_id: quiz.quiz_id },
+      });
+      return { ...quiz, studentsTakenCount: uniqueStudents.length };
+    }
+    return null;
+  }
+
+  async update(id: string, updateQuizDto: any) {
+    const { questions, ...quizData } = updateQuizDto;
+    
+    if (questions) {
+      // Recreate questions if provided
+      await (this.prisma.quizQuestion as any).deleteMany({
+        where: { quiz_id: id }
+      });
+      
+      return await (this.prisma.quiz as any).update({
+        where: { quiz_id: id },
+        data: {
+          ...quizData,
+          questions: {
+            create: questions.map((q) => ({
+              question_text: q.question_text,
+              points: q.points,
+              options: {
+                create: q.options.map((o) => ({
+                  option_text: o.option_text,
+                  is_correct: o.is_correct,
+                })),
+              },
+            })),
+          },
+        },
+        include: { questions: { include: { options: true } } }
+      });
+    }
+
+    return await (this.prisma.quiz as any).update({
+      where: { quiz_id: id },
+      data: quizData,
+      include: { questions: { include: { options: true } } }
+    });
+  }
+
+  async remove(id: string) {
+    await (this.prisma.studentQuizAttempt as any).deleteMany({ where: { quiz_id: id } });
+    await (this.prisma.quizOption as any).deleteMany({
+      where: { question: { quiz_id: id } }
+    });
+    await (this.prisma.quizQuestion as any).deleteMany({ where: { quiz_id: id } });
+    return (this.prisma.quiz as any).delete({ where: { quiz_id: id } });
   }
 }

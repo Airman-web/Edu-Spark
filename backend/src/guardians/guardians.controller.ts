@@ -17,4 +17,13 @@ export class GuardiansController {
   async getProfile(@Request() req) {
     return this.guardiansService.findOne(req.user.sub);
   }
+
+  @Get('students/performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get performance of all students under the current guardian' })
+  @ApiOkResponse({ description: 'Student performance retrieved successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getStudentPerformance(@Request() req) {
+    return this.guardiansService.getStudentPerformance(req.user.sub);
+  }
 }
