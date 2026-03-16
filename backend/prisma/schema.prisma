@@ -49,7 +49,7 @@ model Student {
   password          String
   date_of_birth     DateTime?               @db.Date
   disability_info   String?                 @db.VarChar(100)
-  profile_image_url String?
+  profile_image_url String?                 @db.LongText
   created_at        DateTime                @default(now())
   guardian          Guardian                @relation(fields: [guardian_id], references: [guardian_id])
   grade_group       GradeGroup              @relation(fields: [grade_group_id], references: [grade_group_id])
@@ -83,6 +83,7 @@ model Lesson {
   content_type  String // enum: 'video', 'reading'
   content       String  @db.Text
   points_reward Decimal @db.Decimal(10, 2)
+  created_at    DateTime @default(now())
 
   course   Course                  @relation(fields: [course_id], references: [course_id])
   quizzes  Quiz[]
@@ -94,7 +95,7 @@ model Lesson {
 
 model Quiz {
   quiz_id            String  @id @default(uuid())
-  lesson_id          String  @unique
+  lesson_id          String
   total_points       Decimal @db.Decimal(10, 2)
   is_timed           Boolean @default(false)
   time_limit_seconds Int?
