@@ -244,11 +244,11 @@ export default function GuardianDashboard() {
           <form style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
             <div>
               <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
-                Child's Name
+                Student Display Name
               </label>
               <input
                 type="text"
-                placeholder="Enter child's name"
+                placeholder="Enter student's display name"
                 style={{
                   width: "100%",
                   padding: "10px",
@@ -260,11 +260,11 @@ export default function GuardianDashboard() {
             </div>
             <div>
               <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
-                Age
+                Student ID
               </label>
               <input
-                type="number"
-                placeholder="Enter age"
+                type="text"
+                placeholder="Enter student ID"
                 style={{
                   width: "100%",
                   padding: "10px",
@@ -276,7 +276,22 @@ export default function GuardianDashboard() {
             </div>
             <div>
               <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
-                Grade
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #d1d8f0",
+                  borderRadius: "10px",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
+                Age Group
               </label>
               <select
                 style={{
@@ -287,13 +302,42 @@ export default function GuardianDashboard() {
                   fontSize: "1rem",
                 }}
               >
-                <option>P1</option>
-                <option>P2</option>
-                <option>P3</option>
-                <option>P4</option>
-                <option>P5</option>
-                <option>P6</option>
+                <option>P1–P2</option>
+                <option>P3–P4</option>
+                <option>P5–P6</option>
               </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
+                Upload Profile Picture
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #d1d8f0",
+                  borderRadius: "10px",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontWeight: 600, color: "#3d4566", marginBottom: "5px" }}>
+                Disability (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="Enter any disability information"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "1px solid #d1d8f0",
+                  borderRadius: "10px",
+                  fontSize: "1rem",
+                }}
+              />
             </div>
             <button
               type="submit"
@@ -308,7 +352,7 @@ export default function GuardianDashboard() {
                 marginTop: "10px",
               }}
             >
-              Add Child
+              Submit
             </button>
           </form>
         </div>
