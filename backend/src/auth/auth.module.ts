@@ -5,11 +5,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GuardiansModule } from '../guardians/guardians.module';
 import { StudentsModule } from '../students/students.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    GuardiansModule,
+    PrismaModule,
+    forwardRef(() => GuardiansModule),
     forwardRef(() => StudentsModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],

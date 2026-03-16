@@ -28,9 +28,9 @@ export default function Navbar() {
         top: 0, left: 0, right: 0,
         zIndex:     50,
         transition: "all 0.3s ease",
-        background: scrolled ? "rgba(255,255,255,0.95)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        borderBottom: scrolled ? "1px solid #eef0fa" : "1px solid transparent",
+        background: scrolled ? "rgba(255,255,255,0.95)" : "rgba(0,0,0,0.15)",
+        backdropFilter: "blur(12px)",
+        borderBottom: scrolled ? "1px solid #eef0fa" : "1px solid rgba(255,255,255,0.12)",
         boxShadow: scrolled ? "0 2px 20px rgba(55,73,169,0.08)" : "none",
       }}
     >
@@ -61,6 +61,7 @@ export default function Navbar() {
             fontSize:   "1.25rem",
             color:      scrolled ? "#3749a9" : "#ffffff",
             letterSpacing: "-0.01em",
+            transition: "color 0.3s ease",
           }}>
             EduSpark
           </span>
@@ -77,12 +78,12 @@ export default function Navbar() {
                 fontFamily:  "'Nunito', sans-serif",
                 fontWeight:  700,
                 fontSize:    "0.9rem",
-                color:       scrolled ? "#3d4566" : "#ffffff",
+                color:       scrolled ? "#3d4566" : "rgba(255,255,255,0.9)",
                 textDecoration: "none",
                 transition:  "color 0.2s",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.color = scrolled ? "#3749a9" : "#ffffff")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = scrolled ? "#3d4566" : "#ffffff")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = scrolled ? "#3d4566" : "rgba(255,255,255,0.9)")}
             >
               {link.label}
             </Link>
@@ -92,8 +93,22 @@ export default function Navbar() {
         {/* ── CTA Buttons ── */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}
              className="hidden-mobile">
-          <Link href="/login" className="btn-outline"
-            style={{ padding: "10px 24px", fontSize: "0.875rem" }}>
+          <Link href="/login"
+            style={{
+              padding: "10px 24px",
+              fontSize: "0.875rem",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50px",
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 700,
+              textDecoration: "none",
+              transition: "all 0.2s ease",
+              color: scrolled ? "#3749a9" : "#ffffff",
+              border: scrolled ? "2px solid #3749a9" : "2px solid rgba(255,255,255,0.7)",
+              background: "transparent",
+            }}>
             Log In
           </Link>
           <Link href="/register" className="btn-primary"

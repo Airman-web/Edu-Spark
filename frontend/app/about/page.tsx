@@ -9,9 +9,8 @@ export default function About() {
 
       <main style={{ background: "#ffffff", paddingTop: "80px" }}>
 
-        {/* ══════════════════════════════════════════════════════════
-            HERO SECTION
-        ══════════════════════════════════════════════════════════ */}
+        {/*
+            HERO SECTION */}
         <section
           style={{
             background: "linear-gradient(135deg, #f7f8fc 0%, #eef0fa 100%)",
@@ -85,9 +84,7 @@ export default function About() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            MISSION, VISION, PURPOSE
-        ══════════════════════════════════════════════════════════ */}
+        {/* MISSION, VISION, PURPOSE */}
         <section style={{ padding: "100px 0" }}>
           <div className="container">
             <div style={{ textAlign: "center", marginBottom: "80px" }}>
@@ -283,9 +280,7 @@ export default function About() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            IMPACT STATS
-        ══════════════════════════════════════════════════════════ */}
+        {/*IMPACT STATS */}
         <section
           style={{
             background: "linear-gradient(135deg, #131b46 0%, #1b2561 100%)",

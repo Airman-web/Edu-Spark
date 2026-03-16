@@ -18,7 +18,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer";
 
-/* ─── Data ───────────────────────────────────────────────────────────── */
+/*  Data  */
 const features = [
   {
     icon: faVideo,
@@ -99,7 +99,7 @@ const perks = [
   "Manage multiple children from one account",
 ];
 
-/* ─── Page ───────────────────────────────────────────────────────────── */
+/* Page */
 export default function LandingPage() {
   return (
     <>
@@ -107,18 +107,28 @@ export default function LandingPage() {
 
       <main style={{ background: "#ffffff" }}>
 
-        {/* ══════════════════════════════════════════════════════════
-            HERO  —  pure white background, centered content
-        ══════════════════════════════════════════════════════════ */}
+        {/* HERO — family image with dark overlay */}
         <section
           style={{
-            background:     "#ffffff",
-            paddingTop:     "140px",
-            paddingBottom:  "100px",
-            textAlign:      "center",
+            position:          "relative",
+            paddingTop:        "140px",
+            paddingBottom:     "100px",
+            textAlign:         "center",
+            backgroundImage:   "url('/images/family1.webp')",
+            backgroundSize:    "cover",
+            backgroundPosition:"center center",
+            backgroundRepeat:  "no-repeat",
           }}
         >
-          <div className="container section-center">
+          {/* Dark gradient overlay so white text stays readable */}
+          <div style={{
+            position:   "absolute",
+            inset:      0,
+            background: "linear-gradient(160deg, rgba(13,20,60,0.78) 0%, rgba(19,27,70,0.70) 55%, rgba(41,14,66,0.80) 100%)",
+            zIndex:     0,
+          }} />
+
+          <div className="container section-center" style={{ position: "relative", zIndex: 1 }}>
 
             {/* Live pill */}
             <div
@@ -127,15 +137,16 @@ export default function LandingPage() {
                 display:      "inline-flex",
                 alignItems:   "center",
                 gap:          "8px",
-                background:   "#eef0fa",
-                border:       "1px solid #d1d8f0",
+                background:   "rgba(255,255,255,0.15)",
+                border:       "1px solid rgba(255,255,255,0.35)",
                 borderRadius: "50px",
                 padding:      "6px 16px",
                 fontSize:     "0.75rem",
-                fontWeight:   800,
-                color:        "#3749a9",
+                fontWeight:   600,
+                color:        "#ffffff",
                 marginBottom: "32px",
                 letterSpacing:"0.04em",
+                backdropFilter: "blur(8px)",
               }}
             >
               <span style={{
@@ -153,21 +164,14 @@ export default function LandingPage() {
               className="display-heading anim-fade-up anim-hidden"
               style={{
                 fontSize:            "clamp(2.8rem, 6vw, 5rem)",
-                color:               "#3749a9",
+                color:               "#ffffff",
                 maxWidth:            "820px",
                 marginBottom:        "24px",
                 animationFillMode:   "forwards",
+                textShadow:          "0 2px 20px rgba(0,0,0,0.3)",
               }}
             >
-              Every Child Deserves A Spark{" "}
-              <span style={{
-                background:            "linear-gradient(135deg, #1b2561, #3749a9)",
-                WebkitBackgroundClip:  "text",
-                WebkitTextFillColor:   "transparent",
-                backgroundClip:        "text",
-              }}>
-
-              </span>
+              Every Child Deserves A Spark
             </h1>
 
             {/* Subheadline */}
@@ -175,7 +179,8 @@ export default function LandingPage() {
               className="anim-fade-up anim-hidden delay-2"
               style={{
                 fontSize:          "1.1rem",
-                color:             "#7b82a8",
+                fontWeight:        400,
+                color:             "rgba(255,255,255,0.88)",
                 maxWidth:          "580px",
                 lineHeight:        1.8,
                 marginBottom:      "40px",
@@ -203,7 +208,26 @@ export default function LandingPage() {
                 Get Started Free
                 <FontAwesomeIcon icon={faArrowRight} style={{ width: "14px", height: "14px" }} />
               </Link>
-              <Link href="/login" className="btn-outline">
+              <Link
+                href="/login"
+                style={{
+                  display:        "inline-flex",
+                  alignItems:     "center",
+                  justifyContent: "center",
+                  gap:            "10px",
+                  padding:        "13px 32px",
+                  borderRadius:   "50px",
+                  fontFamily:     "'Poppins', sans-serif",
+                  fontSize:       "0.95rem",
+                  fontWeight:     600,
+                  color:          "#ffffff",
+                  background:     "rgba(255,255,255,0.12)",
+                  border:         "2px solid rgba(255,255,255,0.5)",
+                  textDecoration: "none",
+                  backdropFilter: "blur(6px)",
+                  transition:     "all 0.2s ease",
+                }}
+              >
                 Log In
               </Link>
             </div>
@@ -224,22 +248,23 @@ export default function LandingPage() {
                 <div
                   key={s.label}
                   style={{
-                    background:   "#f7f8fc",
-                    borderRadius: "16px",
-                    padding:      "20px 16px",
-                    border:       "1px solid #eef0fa",
-                    textAlign:    "center",
+                    background:     "rgba(255,255,255,0.12)",
+                    borderRadius:   "16px",
+                    padding:        "20px 16px",
+                    border:         "1px solid rgba(255,255,255,0.25)",
+                    textAlign:      "center",
+                    backdropFilter: "blur(10px)",
                   }}
                 >
                   <div style={{
-                    fontFamily: "'Playfair Display', serif",
+                    fontFamily: "'Poppins', sans-serif",
                     fontSize:   "1.8rem",
-                    fontWeight: 900,
-                    color:      "#1b2561",
+                    fontWeight: 800,
+                    color:      "#ffffff",
                   }}>
                     {s.value}
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "#7b82a8", marginTop: "4px", fontWeight: 600 }}>
+                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.72)", marginTop: "4px", fontWeight: 500 }}>
                     {s.label}
                   </div>
                 </div>
@@ -324,9 +349,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            HOW IT WORKS  —  white background, centered steps
-        ══════════════════════════════════════════════════════════ */}
+        {/* HOW IT WORKS  —  white background, centered steps */}
         <section id="how-it-works" style={{ background: "#ffffff", padding: "96px 0" }}>
           <div className="container">
 
@@ -398,9 +421,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            GUARDIAN SECTION  —  off-white, two-column centered
-        ══════════════════════════════════════════════════════════ */}
+        {/* GUARDIAN SECTION  —  off-white, two-column centered */}
         <section id="guardians" style={{ background: "#f7f8fc", padding: "96px 0" }}>
           <div className="container">
             <div style={{
@@ -540,9 +561,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            CTA BANNER  —  dark gradient, centered
-        ══════════════════════════════════════════════════════════ */}
+        {/*CTA BANNER  —  dark gradient, centered */}
         <section style={{ padding: "96px 0" }}>
           <div className="container section-center">
             <div style={{
@@ -615,7 +634,7 @@ export default function LandingPage() {
                       gap:            "10px",
                       padding:        "14px 32px",
                       borderRadius:   "50px",
-                      fontFamily:     "'Nunito', sans-serif",
+                      fontFamily:     "'Poppins', sans-serif",
                       fontSize:       "0.95rem",
                       fontWeight:     800,
                       color:          "rgba(255,255,255,0.85)",

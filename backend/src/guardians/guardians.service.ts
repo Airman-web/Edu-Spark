@@ -18,6 +18,14 @@ export class GuardiansService {
       throw new ConflictException('Email already registered');
     }
 
+    // Check if phone number already exists
+    const existingPhone = await (this.prisma.guardian as any).findFirst({
+      where: { phone_number: rest.phone_number },
+    });
+    if (existingPhone) {
+      throw new ConflictException('Phone number already registered');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return (this.prisma.guardian as any).create({

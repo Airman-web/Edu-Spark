@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer";
@@ -22,163 +22,130 @@ import {
   faClock,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 type Course = {
-  id: string;
+  course_id: string;
+  grade_group_id: string;
   title: string;
-  subject: string;
-  ageGroup: string;
+  description: string;
   lessons: number;
-  duration: string;
-  icon: IconDefinition;
-  iconColor: string;
+  totalPoints: number;
+  created_at: string;
+};
+
+type GradeGroup = {
+  grade_group_id: string;
+  name: string;
   description: string;
 };
 
-const COURSES: Course[] = [
-  {
-    id: "math-p1-p2",
-    title: "Mathematics Basics",
-    subject: "Mathematics",
-    ageGroup: "P1–P2",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faCalculator,
-    iconColor: "#3749a9",
-    description: "Learn numbers, counting, addition and subtraction through fun games and activities.",
-  },
-  {
-    id: "english-p1-p2",
-    title: "English for Beginners",
-    subject: "English",
-    ageGroup: "P1–P2",
-    lessons: 10,
-    duration: "3 weeks",
-    icon: faBookOpen,
-    iconColor: "#0e7490",
-    description: "Build reading and writing foundations with simple words, letters, and basic sentences.",
-  },
-  {
-    id: "science-p1-p2",
-    title: "Exploring Our World",
-    subject: "Science",
-    ageGroup: "P1–P2",
-    lessons: 8,
-    duration: "3 weeks",
-    icon: faEarth,
-    iconColor: "#059669",
-    description: "Discover plants, animals, and the environment through engaging video lessons.",
-  },
-  {
-    id: "math-p3-p4",
-    title: "Mathematics Intermediate",
-    subject: "Mathematics",
-    ageGroup: "P3–P4",
-    lessons: 16,
-    duration: "5 weeks",
-    icon: faDivide,
-    iconColor: "#3749a9",
-    description: "Dive into multiplication, division, fractions, and basic geometry concepts.",
-  },
-  {
-    id: "english-p3-p4",
-    title: "English Grammar & Reading",
-    subject: "English",
-    ageGroup: "P3–P4",
-    lessons: 14,
-    duration: "4 weeks",
-    icon: faPencil,
-    iconColor: "#0e7490",
-    description: "Strengthen grammar, comprehension, and writing skills with structured lessons.",
-  },
-  {
-    id: "science-p3-p4",
-    title: "Science & Nature",
-    subject: "Science",
-    ageGroup: "P3–P4",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faFlask,
-    iconColor: "#059669",
-    description: "Explore the human body, ecosystems, and basic physics through experiments.",
-  },
-  {
-    id: "social-p3-p4",
-    title: "Social Studies",
-    subject: "Social Studies",
-    ageGroup: "P3–P4",
-    lessons: 10,
-    duration: "3 weeks",
-    icon: faMap,
-    iconColor: "#7c3aed",
-    description: "Learn about Rwanda's history, geography, and community through story-led lessons.",
-  },
-  {
-    id: "math-p5-p6",
-    title: "Advanced Mathematics",
-    subject: "Mathematics",
-    ageGroup: "P5–P6",
-    lessons: 20,
-    duration: "6 weeks",
-    icon: faRulerCombined,
-    iconColor: "#3749a9",
-    description: "Master algebra, percentages, ratios, and problem solving at a higher level.",
-  },
-  {
-    id: "english-p5-p6",
-    title: "English Composition",
-    subject: "English",
-    ageGroup: "P5–P6",
-    lessons: 18,
-    duration: "5 weeks",
-    icon: faFileLines,
-    iconColor: "#0e7490",
-    description: "Write essays, reports, and creative pieces with confidence and accuracy.",
-  },
-  {
-    id: "science-p5-p6",
-    title: "Science & Technology",
-    subject: "Science",
-    ageGroup: "P5–P6",
-    lessons: 16,
-    duration: "5 weeks",
-    icon: faMicroscope,
-    iconColor: "#059669",
-    description: "Study chemistry, physics, and biology concepts aligned to the P5–P6 curriculum.",
-  },
-  {
-    id: "social-p5-p6",
-    title: "Civics & Geography",
-    subject: "Social Studies",
-    ageGroup: "P5–P6",
-    lessons: 14,
-    duration: "4 weeks",
-    icon: faLandmark,
-    iconColor: "#7c3aed",
-    description: "Understand government, citizenship, and African geography through rich content.",
-  },
-  {
-    id: "kinyarwanda-p5-p6",
-    title: "Kinyarwanda Advanced",
-    subject: "Kinyarwanda",
-    ageGroup: "P5–P6",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faLanguage,
-    iconColor: "#b45309",
-    description: "Improve reading, writing, and oral Kinyarwanda skills at an advanced level.",
-  },
+// creating a map of courses to icon and color randomly for consistent styling
+const ICONS = [
+  faBookOpen,
+  faCalculator,
+  faFlask,
+  faEarth,
+  faMap,
+  faMicroscope,
+  faLanguage,
+  faLandmark,
 ];
 
-const AGE_GROUPS = ["All", "P1–P2", "P3–P4", "P5–P6"];
+const COLORS = [
+  "#3749a9",
+  "#059669",
+  "#0e7490",
+  "#7c3aed",
+  "#b45309",
+  "#1b9e5a",
+];
+
+// creating a function to assign icons and colors randomly
+function getVisualForCourse(courseId: string) {
+  const hash = courseId
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+  const icon = ICONS[hash % ICONS.length];
+  const color = COLORS[hash % COLORS.length];
+
+  return { icon, color };
+}
+
+function truncate(text: string, maxLength: number) {
+  if (!text) return "";
+  return text.length > maxLength
+    ? text.slice(0, maxLength) + "..."
+    : text;
+}
 
 export default function CoursesPage() {
   const [selectedGroup, setSelectedGroup] = useState("All");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [gradeGroups, setGradeGroups] = useState<GradeGroup[]>([]);
+  
+  const gradeMap = Object.fromEntries(
+    gradeGroups.map((g) => [g.grade_group_id, g.name])
+  );
 
-  const filtered = selectedGroup === "All"
-    ? COURSES
-    : COURSES.filter((c) => c.ageGroup === selectedGroup);
+  const filtered =
+    selectedGroup === "All"
+      ? courses
+      : courses.filter((c) => gradeMap[c.grade_group_id] === selectedGroup);
+      
+  const ageGroups = ["All", ...gradeGroups.map((g) => g.name)];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [coursesRes, lessonsRes, gradeGroupsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/lessons`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/grade-groups`)
+        ]);
+
+        const coursesData = await coursesRes.json();
+        const lessonsData = await lessonsRes.json();
+        const gradeGroupsData = await gradeGroupsRes.json();
+
+        setGradeGroups(gradeGroupsData);
+
+        const lessonStatsMap: Record<
+          string,
+          { count: number; totalPoints: number }
+        > = {};
+
+        lessonsData.forEach((lesson: any) => {
+          if (!lessonStatsMap[lesson.course_id]) {
+            lessonStatsMap[lesson.course_id] = { count: 0, totalPoints: 0 };
+          }
+
+          lessonStatsMap[lesson.course_id].count += 1;
+          lessonStatsMap[lesson.course_id].totalPoints +=
+            lesson.points_reward || 0;
+        });
+
+        const formattedCourses: Course[] = coursesData.map((c: any) => ({
+          course_id: c.course_id,
+          grade_group_id: c.grade_group_id,
+          title: c.title,
+          description: c.description,
+          lessons: lessonStatsMap[c.course_id]?.count || 0,
+          totalPoints: lessonStatsMap[c.course_id]?.totalPoints || 0,
+          created_at: c.created_at,
+        }));
+
+        setCourses(formattedCourses);
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <>
@@ -187,7 +154,9 @@ export default function CoursesPage() {
       <main style={{ background: "#ffffff", minHeight: "100vh", fontFamily: "Poppins, Nunito, sans-serif" }}>
 
         <section style={{
-          backgroundImage: "linear-gradient(90deg, #131b46, #1b2561)",
+          backgroundImage: "linear-gradient(90deg, rgba(27,37,97,0.10)), url('/images/study2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           paddingTop: "120px",
           paddingBottom: "80px",
           textAlign: "center",
@@ -246,7 +215,7 @@ export default function CoursesPage() {
                   Filter by grade:
                 </span>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  {AGE_GROUPS.map((group) => (
+                  {ageGroups.map((group) => (
                     <button
                       key={group}
                       onClick={() => setSelectedGroup(group)}
@@ -279,38 +248,37 @@ export default function CoursesPage() {
               gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
               gap: "24px",
             }}>
-              {filtered.map((course) => (
+              {filtered.map((course) => {
+                const { icon, color } = getVisualForCourse(course.course_id);
+
+                return (
                 <div
-                  key={course.id}
+                  key={course.course_id}
+                  className="rounded-[20px] p-7 flex flex-col gap-4 
+                            transition-all duration-200 
+                            shadow-[0_8px_32px_rgba(19,27,70,0.15)]
+                            hover:-translate-y-1 
+                            hover:shadow-[0_16px_48px_rgba(19,27,70,0.25)]"
                   style={{
                     backgroundImage: "linear-gradient(135deg, #1b2561, #290e42)",
-                    borderRadius: "20px",
-                    padding: "28px",
-                    boxShadow: "0 8px 32px rgba(19,27,70,0.15)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 16px 48px rgba(19,27,70,0.25)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(19,27,70,0.15)";
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{
-                      width: "52px", height: "52px", borderRadius: "14px",
-                      background: `${course.iconColor}25`,
-                      border: `1px solid ${course.iconColor}50`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
+                    <div
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        borderRadius: "14px",
+                        background: `${color}25`,
+                        border: `1px solid ${color}50`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <FontAwesomeIcon
-                        icon={course.icon}
-                        style={{ width: "22px", height: "22px", color: course.iconColor }}
+                        icon={icon}
+                        style={{ width: "22px", height: "22px", color }}
                       />
                     </div>
                     <span style={{
@@ -321,25 +289,18 @@ export default function CoursesPage() {
                       color: "rgba(255,255,255,0.8)",
                       border: "1px solid rgba(255,255,255,0.15)",
                     }}>
-                      {course.ageGroup}
+                      {gradeMap[course.grade_group_id] || "Unknown"}
                     </span>
                   </div>
 
                   <div>
-                    <p style={{
-                      fontSize: "0.68rem", fontWeight: 700,
-                      textTransform: "uppercase", letterSpacing: "0.08em",
-                      color: "#a0b0ff", marginBottom: "8px",
-                    }}>
-                      {course.subject}
-                    </p>
                     <h3 style={{
                       fontSize: "1.05rem", fontWeight: 800,
                       color: "#ffffff", marginBottom: "8px", lineHeight: 1.3,
                     }}>
                       {course.title}
                     </h3>
-                    <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
+                    <p className="line-clamp-3" style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>
                       {course.description}
                     </p>
                   </div>
@@ -356,15 +317,15 @@ export default function CoursesPage() {
                       </span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <FontAwesomeIcon icon={faClock} style={{ width: "12px", height: "12px", color: "#a0b0ff" }} />
+                      <FontAwesomeIcon icon={faCalculator} style={{ width: "12px", height: "12px", color: "#a0b0ff" }} />
                       <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>
-                        {course.duration}
+                        {course.totalPoints} points
                       </span>
                     </div>
                   </div>
 
                   <Link
-                    href={`/courses/${course.id}`}
+                    href={`/courses/${course.course_id}`}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
                       padding: "11px", borderRadius: "50px",
@@ -380,15 +341,28 @@ export default function CoursesPage() {
                     <FontAwesomeIcon icon={faChevronRight} style={{ width: "11px", height: "11px" }} />
                   </Link>
                 </div>
-              ))}
+                );
+            })}
             </div>
 
-            {filtered.length === 0 && (
-              <div style={{ textAlign: "center", padding: "80px 0", color: "#7b82a8" }}>
-                <FontAwesomeIcon icon={faBookOpen} style={{ width: "48px", height: "48px", marginBottom: "16px", opacity: 0.3 }} />
-                <p style={{ fontSize: "1rem", fontWeight: 600 }}>No courses found for this grade group.</p>
+            {loading ? (
+              <div className="flex flex-col justify-center items-center py-20 gap-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+                <p className="text-sm font-semibold text-gray-500 animate-pulse">
+                  Loading available courses...
+                </p>
               </div>
-            )}
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "80px 0", color: "#7b82a8" }}>
+                <FontAwesomeIcon
+                  icon={faBookOpen}
+                  style={{ width: "48px", height: "48px", marginBottom: "16px", opacity: 0.3 }}
+                />
+                <p style={{ fontSize: "1rem", fontWeight: 600 }}>
+                  No courses found for this grade group.
+                </p>
+              </div>
+            ) : null}
 
           </div>
         </section>

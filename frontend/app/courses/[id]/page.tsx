@@ -31,190 +31,90 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
+
 type Course = {
-  id: string;
+  course_id: string;
+  grade_group_id: string;
   title: string;
-  subject: string;
-  ageGroup: string;
-  lessons: number;
-  duration: string;
-  icon: IconDefinition;
-  iconColor: string;
   description: string;
+  created_at: string;
 };
 
 type Lesson = {
-  id: string;
+  lesson_id: string;
+  course_id: string;
   title: string;
-  contentType: 'video' | 'reading';
-  duration: string;
-  points: number;
-  completed?: boolean;
+  content_type: "video" | "reading";
+  content: string;
+  points_reward: number;
+  created_at: string;
 };
 
-// Hardcoded courses data (same as in courses/page.tsx)
-const COURSES: Course[] = [
-  {
-    id: "math-p1-p2",
-    title: "Mathematics Basics",
-    subject: "Mathematics",
-    ageGroup: "P1–P2",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faCalculator,
-    iconColor: "#3749a9",
-    description: "Learn numbers, counting, addition and subtraction through fun games and activities.",
-  },
-  {
-    id: "english-p1-p2",
-    title: "English for Beginners",
-    subject: "English",
-    ageGroup: "P1–P2",
-    lessons: 10,
-    duration: "3 weeks",
-    icon: faBookOpen,
-    iconColor: "#0e7490",
-    description: "Build reading and writing foundations with simple words, letters, and basic sentences.",
-  },
-  {
-    id: "science-p1-p2",
-    title: "Exploring Our World",
-    subject: "Science",
-    ageGroup: "P1–P2",
-    lessons: 8,
-    duration: "3 weeks",
-    icon: faEarth,
-    iconColor: "#059669",
-    description: "Discover plants, animals, and the environment through engaging video lessons.",
-  },
-  {
-    id: "math-p3-p4",
-    title: "Mathematics Intermediate",
-    subject: "Mathematics",
-    ageGroup: "P3–P4",
-    lessons: 16,
-    duration: "5 weeks",
-    icon: faDivide,
-    iconColor: "#3749a9",
-    description: "Dive into multiplication, division, fractions, and basic geometry concepts.",
-  },
-  {
-    id: "english-p3-p4",
-    title: "English Grammar & Reading",
-    subject: "English",
-    ageGroup: "P3–P4",
-    lessons: 14,
-    duration: "4 weeks",
-    icon: faPencil,
-    iconColor: "#0e7490",
-    description: "Strengthen grammar, comprehension, and writing skills with structured lessons.",
-  },
-  {
-    id: "science-p3-p4",
-    title: "Science & Nature",
-    subject: "Science",
-    ageGroup: "P3–P4",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faFlask,
-    iconColor: "#059669",
-    description: "Explore physics, chemistry, and biology through hands-on experiments.",
-  },
-  {
-    id: "social-p3-p4",
-    title: "Social Studies Basics",
-    subject: "Social Studies",
-    ageGroup: "P3–P4",
-    lessons: 10,
-    duration: "3 weeks",
-    icon: faMap,
-    iconColor: "#7c3aed",
-    description: "Learn about communities, cultures, and basic geography concepts.",
-  },
-  {
-    id: "math-p5-p6",
-    title: "Advanced Mathematics",
-    subject: "Mathematics",
-    ageGroup: "P5–P6",
-    lessons: 20,
-    duration: "6 weeks",
-    icon: faRulerCombined,
-    iconColor: "#3749a9",
-    description: "Master advanced arithmetic, algebra basics, and complex problem-solving.",
-  },
-  {
-    id: "english-p5-p6",
-    title: "English Literature & Writing",
-    subject: "English",
-    ageGroup: "P5–P6",
-    lessons: 18,
-    duration: "5 weeks",
-    icon: faFileLines,
-    iconColor: "#0e7490",
-    description: "Develop advanced reading comprehension and creative writing skills.",
-  },
-  {
-    id: "science-p5-p6",
-    title: "Advanced Science",
-    subject: "Science",
-    ageGroup: "P5–P6",
-    lessons: 16,
-    duration: "5 weeks",
-    icon: faMicroscope,
-    iconColor: "#059669",
-    description: "Deep dive into advanced scientific concepts and research methods.",
-  },
-  {
-    id: "social-p5-p6",
-    title: "Civics & Geography",
-    subject: "Social Studies",
-    ageGroup: "P5–P6",
-    lessons: 14,
-    duration: "4 weeks",
-    icon: faLandmark,
-    iconColor: "#7c3aed",
-    description: "Understand government, citizenship, and African geography through rich content.",
-  },
-  {
-    id: "kinyarwanda-p5-p6",
-    title: "Kinyarwanda Advanced",
-    subject: "Kinyarwanda",
-    ageGroup: "P5–P6",
-    lessons: 12,
-    duration: "4 weeks",
-    icon: faLanguage,
-    iconColor: "#b45309",
-    description: "Improve reading, writing, and oral Kinyarwanda skills at an advanced level.",
-  },
+type GradeGroup = {
+  grade_group_id: string;
+  name: string;
+  description: string;
+};
+
+const ICONS = [
+  faBookOpen,
+  faCalculator,
+  faFlask,
+  faEarth,
+  faMap,
+  faMicroscope,
+  faLanguage,
+  faLandmark,
 ];
 
-// Generate sample lessons for each course
-const generateLessons = (courseId: string, lessonCount: number): Lesson[] => {
-  const lessons: Lesson[] = [];
-  const subjects = {
-    math: ["Numbers & Counting", "Addition", "Subtraction", "Shapes", "Patterns", "Measurement", "Time", "Money", "Fractions", "Word Problems"],
-    english: ["Letters & Sounds", "Reading Words", "Simple Sentences", "Story Time", "Writing Letters", "Vocabulary", "Grammar Basics", "Reading Comprehension", "Creative Writing", "Literature"],
-    science: ["Plants", "Animals", "Weather", "Earth & Space", "Matter", "Energy", "Environment", "Human Body", "Experiments", "Research"],
-    social: ["My Community", "Families", "Cultures", "Maps", "Countries", "Government", "History", "Geography", "Citizenship", "Global Awareness"],
-    kinyarwanda: ["Basic Words", "Greetings", "Family", "Numbers", "Colors", "Food", "Animals", "Daily Activities", "Stories", "Writing"]
-  };
+const COLORS = [
+  "#3749a9",
+  "#059669",
+  "#0e7490",
+  "#7c3aed",
+  "#b45309",
+  "#1b9e5a",
+];
 
-  const subjectKey = courseId.split('-')[0] as keyof typeof subjects;
-  const topicList = subjects[subjectKey] || subjects.math;
+function getVisualForCourse(courseId: string) {
+  const hash = courseId
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
-  for (let i = 1; i <= lessonCount; i++) {
-    lessons.push({
-      id: `${courseId}-lesson-${i}`,
-      title: topicList[i - 1] || `Lesson ${i}`,
-      contentType: Math.random() > 0.5 ? 'video' : 'reading',
-      duration: `${Math.floor(Math.random() * 20) + 10} min`,
-      points: Math.floor(Math.random() * 50) + 20,
-      completed: Math.random() > 0.7, // Random completion for demo
-    });
+  const icon = ICONS[hash % ICONS.length];
+  const color = COLORS[hash % COLORS.length];
+
+  return { icon, color };
+}
+
+function buildPrerequisites(
+  gradeName: string | undefined,
+  totalLessons: number
+): string[] {
+  if (!gradeName) return [];
+
+  if (gradeName.includes("P1") || gradeName.includes("P2")) {
+    return [
+      "Ability to follow simple instructions",
+      "Basic reading readiness",
+      "Curiosity and willingness to learn"
+    ];
   }
 
-  return lessons;
-};
+  if (gradeName.includes("P3") || gradeName.includes("P4")) {
+    return [
+      "Completion of lower primary level",
+      "Basic literacy and numeracy skills",
+      `Ability to manage ${totalLessons}+ structured lessons`
+    ];
+  }
+
+  return [
+    "Strong foundation from previous grade level",
+    "Independent reading and comprehension skills",
+    "Commitment to structured weekly learning"
+  ];
+}
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -222,16 +122,58 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [gradeGroups, setGradeGroups] = useState<GradeGroup[]>([]);
+  const estimatedDurationWeeks = Math.ceil(lessons.length / 4);
 
-  useEffect(() => {
-    // Find course from hardcoded data
-    const foundCourse = COURSES.find(c => c.id === courseId);
-    if (foundCourse) {
-      setCourse(foundCourse);
-      setLessons(generateLessons(courseId, foundCourse.lessons));
+
+  const totalPoints = lessons.reduce(
+    (sum, lesson) => sum + lesson.points_reward,
+    0
+  );
+
+  const estimatedLessonsWeeks = Math.ceil(totalPoints / 100);
+
+  const gradeMap = Object.fromEntries(
+    gradeGroups.map((g) => [g.grade_group_id, g.name])
+  );
+
+
+useEffect(() => {
+  const fetchCourseDetails = async () => {
+    try {
+      setLoading(true);
+
+      const [courseRes, lessonsRes, gradeRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/courses/${courseId}`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/lessons`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/grade-groups`)
+      ]);
+
+      const courseData = await courseRes.json();
+      const lessonsData = await lessonsRes.json();
+      const gradeData = await gradeRes.json();
+      setGradeGroups(gradeData);
+
+      setCourse(courseData);
+
+      // Filter lessons for this course
+      const filteredLessons = lessonsData.filter(
+        (lesson: Lesson) => lesson.course_id === courseId
+      );
+
+      setLessons(filteredLessons);
+
+    } catch (error) {
+      console.error("Failed to fetch course details:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [courseId]);
+  };
+
+  if (courseId) {
+    fetchCourseDetails();
+  }
+}, [courseId]);
 
   if (loading) {
     return (
@@ -261,16 +203,17 @@ export default function CourseDetailPage() {
   }
 
   const learningObjectives = [
-    "Master fundamental concepts in " + course.subject.toLowerCase(),
+    "Master fundamental concepts in " + course.title.toLowerCase(),
     "Develop critical thinking and problem-solving skills",
     "Build confidence through interactive learning activities",
     "Apply knowledge to real-world scenarios",
     "Prepare for advanced studies in the subject"
   ];
 
-  const prerequisites = course.ageGroup === "P1–P2"
-    ? ["Basic motor skills", "Ability to recognize colors and shapes"]
-    : ["Completion of previous grade level", "Basic literacy and numeracy skills"];
+  const gradeName = gradeMap[course.grade_group_id];
+  const prerequisites = buildPrerequisites(gradeName, lessons.length);
+  const { icon, color } = getVisualForCourse(course.course_id);
+
 
   return (
     <>
@@ -309,14 +252,14 @@ export default function CourseDetailPage() {
               {/* Course Icon */}
               <div style={{
                 width: "80px", height: "80px", borderRadius: "20px",
-                background: `${course.iconColor}25`,
-                border: `2px solid ${course.iconColor}50`,
+                background: `$${color}25`,
+                border: `2px solid ${color}50`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
               }}>
                 <FontAwesomeIcon
-                  icon={course.icon}
-                  style={{ width: "36px", height: "36px", color: course.iconColor }}
+                  icon={icon}
+                  style={{ width: "36px", height: "36px", color: color }}
                 />
               </div>
 
@@ -331,7 +274,7 @@ export default function CourseDetailPage() {
                     color: "#ffffff",
                     border: "1px solid rgba(255,255,255,0.15)",
                   }}>
-                    {course.subject}
+                    {course.title}
                   </span>
                   <span style={{
                     fontSize: "0.75rem", fontWeight: 800,
@@ -341,7 +284,7 @@ export default function CourseDetailPage() {
                     color: "#ffffff",
                     border: "1px solid rgba(255,255,255,0.15)",
                   }}>
-                    {course.ageGroup}
+                    {gradeMap[course.grade_group_id] || "Unknown Grade"}
                   </span>
                 </div>
 
@@ -364,13 +307,13 @@ export default function CourseDetailPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <FontAwesomeIcon icon={faVideo} style={{ width: "16px", height: "16px", color: "#a0b0ff" }} />
                     <span style={{ color: "#ffffff", fontWeight: 600 }}>
-                      {course.lessons} Lessons
+                      {lessons.length} Lessons
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <FontAwesomeIcon icon={faClock} style={{ width: "16px", height: "16px", color: "#a0b0ff" }} />
                     <span style={{ color: "#ffffff", fontWeight: 600 }}>
-                      {course.duration}
+                      {estimatedDurationWeeks} weeks
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -445,12 +388,12 @@ export default function CourseDetailPage() {
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     {lessons.map((lesson, index) => (
-                      <div key={lesson.id} style={{
+                      <div key={lesson.lesson_id} style={{
                         display: "flex", alignItems: "center", gap: "16px",
                         padding: "16px 20px",
                         borderRadius: "12px",
-                        background: lesson.completed ? "#f0fdf4" : "#f8fafc",
-                        border: `1px solid ${lesson.completed ? "#bbf7d0" : "#e2e8f0"}`,
+                        background: "#f0fdf4",
+                        border: "1px solid #bbf7d0",
                         transition: "all 0.2s",
                         cursor: "pointer",
                       }}
@@ -462,20 +405,15 @@ export default function CourseDetailPage() {
                         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
                         (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
                       }}
-                      onClick={() => window.location.href = `/courses/${courseId}/${lesson.id}`}
+                      onClick={() => window.location.href = `/courses/${courseId}/${lesson.lesson_id}`}
                       >
                         <div style={{
                           width: "40px", height: "40px", borderRadius: "50%",
-                          background: lesson.completed ? "#10b981" : "#e2e8f0",
+                          background: "#10b981",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          color: lesson.completed ? "#ffffff" : "#64748b",
+                          color: "#ffffff",
                           fontWeight: 700, fontSize: "0.9rem",
                         }}>
-                          {lesson.completed ? (
-                            <FontAwesomeIcon icon={faCheckCircle} style={{ width: "16px", height: "16px" }} />
-                          ) : (
-                            index + 1
-                          )}
                         </div>
 
                         <div style={{ flex: 1 }}>
@@ -491,24 +429,24 @@ export default function CourseDetailPage() {
                               display: "flex", alignItems: "center", gap: "4px"
                             }}>
                               <FontAwesomeIcon
-                                icon={lesson.contentType === 'video' ? faVideo : faBookOpen}
+                                icon={lesson.content_type === 'video' ? faVideo : faBookOpen}
                                 style={{ width: "12px", height: "12px" }}
                               />
-                              {lesson.contentType}
+                              {lesson.content_type}
                             </span>
                             <span style={{
                               fontSize: "0.85rem", color: "#64748b",
                               display: "flex", alignItems: "center", gap: "4px"
                             }}>
                               <FontAwesomeIcon icon={faClock} style={{ width: "12px", height: "12px" }} />
-                              {lesson.duration}
+                              {estimatedLessonsWeeks} weeks
                             </span>
                             <span style={{
                               fontSize: "0.85rem", color: "#64748b",
                               display: "flex", alignItems: "center", gap: "4px"
                             }}>
                               <FontAwesomeIcon icon={faStar} style={{ width: "12px", height: "12px", color: "#ffd700" }} />
-                              {lesson.points} points
+                              {lesson.points_reward} points
                             </span>
                           </div>
                         </div>
@@ -581,7 +519,7 @@ export default function CourseDetailPage() {
                       <div style={{
                         fontSize: "2rem", fontWeight: 800, color: "#3749a9", marginBottom: "4px"
                       }}>
-                        {course.lessons}
+                        {lessons.length}
                       </div>
                       <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>
                         Total Lessons
@@ -592,7 +530,7 @@ export default function CourseDetailPage() {
                       <div style={{
                         fontSize: "2rem", fontWeight: 800, color: "#10b981", marginBottom: "4px"
                       }}>
-                        {course.duration}
+                        {estimatedDurationWeeks} weeks
                       </div>
                       <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>
                         Duration
