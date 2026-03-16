@@ -61,6 +61,12 @@ const adminMain: NavItem[] = [
     path: `${adminRoute}/students`,
   },
   {
+    id: "grade-groups",
+    label: "Grade Groups",
+    icon: LuUsers,
+    path: `${adminRoute}/grade-groups`,
+  },
+  {
     id: "courses",
     label: "Courses",
     icon: LuBookOpen,
@@ -152,15 +158,18 @@ function usePortal(pathname: string) {
     return {
       main: guardianMain,
       base: guardianRoute,
+      role: "Guardian",
     };
   if (pathname.startsWith(studentRoute))
     return {
       main: studentMain,
       base: studentRoute,
+      role: "Student",
     };
   return {
     main: adminMain,
     base: adminRoute,
+    role: "Admin",
   };
 }
 
@@ -211,7 +220,24 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
           : first
             ? first.slice(0, 2).toUpperCase()
             : "U";
-      setUserProfile({ name, role: u.role || "Admin", initials });
+      let formattedRole = "User";
+
+      if (u.role) {
+        formattedRole =
+          u.role.toLowerCase() === "admin"
+            ? "Admin"
+            : u.role.toLowerCase() === "guardian"
+            ? "Guardian"
+            : u.role.toLowerCase() === "student"
+            ? "Student"
+            : u.role;
+      }
+
+      setUserProfile({
+        name,
+        role: formattedRole,
+        initials,
+      });
     } catch (err) {
       toast.error("Failed to load user profile", {
         description:

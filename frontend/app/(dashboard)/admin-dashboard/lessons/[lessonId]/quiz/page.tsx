@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -29,7 +29,13 @@ type Question = {
 
 export default function CreateQuizPage() {
   const params = useParams();
+  const router = useRouter();
+
   const lessonId = params?.lessonId as string;
+
+  // Edit mode state
+  const [isEditMode] = useState(false);
+  const [quizId] = useState<string | null>(null);
 
   const [questions, setQuestions] = useState<Question[]>([
     {
@@ -70,7 +76,6 @@ export default function CreateQuizPage() {
       toast.error("Quiz must have at least one question");
       return;
     }
-
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -120,80 +125,88 @@ export default function CreateQuizPage() {
   };
 
   const handleSubmit = async () => {
+    if (uploading) return;
+
     if (questions.length === 0) {
-        toast.error("Quiz must contain at least one question");
-        return;
+      toast.error("Quiz must contain at least one question");
+      return;
     }
 
     for (const q of questions) {
-        if (!q.question_text.trim()) {
+      if (!q.question_text.trim()) {
         toast.error("All questions must have text");
         return;
-        }
+      }
 
-        if (!q.options.some((opt) => opt.is_correct)) {
+      if (!q.options.some((opt) => opt.is_correct)) {
         toast.error("Each question must have one correct answer selected");
         return;
-        }
+      }
 
-        if (!q.points || q.points <= 0) {
+      if (!q.points || q.points <= 0) {
         toast.error("Each question must have valid points");
         return;
-        }
+      }
     }
 
-    const payload: any = {
-        lesson_id: lessonId,
-        total_points: totalPoints,
-        is_timed: isTimed,
-        time_limit_seconds: isTimed ? quizTimer : 1,
-        questions,
+    if (isTimed && (!quizTimer || quizTimer <= 0)) {
+      toast.error("Please set a valid quiz timer");
+      return;
+    }
+
+    const payload = {
+      lesson_id: lessonId,
+      total_points: totalPoints,
+      is_timed: isTimed,
+      time_limit_seconds: isTimed ? quizTimer : 1,
+      questions,
     };
-
-    if (isTimed) {
-        if (!quizTimer || quizTimer <= 0) {
-        toast.error("Please set a valid quiz timer");
-        return;
-        }
-
-        payload.time_limit_seconds = quizTimer;
-    }
 
     setUploading(true);
 
     try {
-        const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-        const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/quizzes`,
-        {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(payload),
-        }
-        );
+      const url = isEditMode
+        ? `${process.env.NEXT_PUBLIC_API_URL}/quizzes/${quizId}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/quizzes`;
 
-        if (!res.ok) {
-        throw new Error("Failed to create quiz");
-        }
+      const method = isEditMode ? "PATCH" : "POST";
 
-        toast.success("Quiz created successfully");
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save quiz");
+      }
+
+      toast.success(
+        isEditMode
+          ? "Quiz updated successfully"
+          : "Quiz created successfully"
+      );
+
+      // Redirecting to lessons page after save
+      router.push("/admin-dashboard/lessons");
+
     } catch (err: any) {
-        toast.error(err.message || "Error saving quiz");
+      toast.error(err.message || "Error saving quiz");
     } finally {
-        setUploading(false);
+      setUploading(false);
     }
-    };
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-8">
-      {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h1 className="text-2xl font-bold text-[#0f1535]">
-          Create Quiz
+          {isEditMode ? "Edit Quiz" : "Create Quiz"}
         </h1>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -232,29 +245,21 @@ export default function CreateQuizPage() {
         </div>
       </div>
 
-      {/* Questions */}
       {questions.map((q, qIndex) => (
         <div
           key={qIndex}
           className="bg-white border border-[#e4e6f0] rounded-2xl p-6 space-y-6 shadow-sm"
         >
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon
-                icon={faCircleQuestion}
-                className="text-[#3749a9]"
-              />
-              <h2 className="font-semibold">
-                Question {qIndex + 1}
-              </h2>
-            </div>
+            <h2 className="font-semibold">
+              Question {qIndex + 1}
+            </h2>
 
             <Button
               variant="destructive"
               size="sm"
               disabled={questions.length === 1}
               onClick={() => deleteQuestion(qIndex)}
-              className="gap-1"
             >
               <FontAwesomeIcon icon={faTrash} />
               Delete
@@ -262,7 +267,7 @@ export default function CreateQuizPage() {
           </div>
 
           <input
-            className="w-full border border-[#e4e6f0] rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#3749a9]/20 outline-none"
+            className="w-full border border-[#e4e6f0] rounded-lg px-4 py-2"
             placeholder="Enter question text"
             value={q.question_text}
             onChange={(e) =>
@@ -277,7 +282,7 @@ export default function CreateQuizPage() {
           />
 
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faStar} className="text-[#3749a9]" />
+            <FontAwesomeIcon icon={faStar} />
             <input
               type="number"
               min={1}
@@ -316,10 +321,7 @@ export default function CreateQuizPage() {
                       className="text-green-600"
                     />
                   ) : (
-                    <FontAwesomeIcon
-                      icon={faCircle}
-                      className="text-[#9ba3c7]"
-                    />
+                    <FontAwesomeIcon icon={faCircle} />
                   )}
                 </button>
 
@@ -369,7 +371,6 @@ export default function CreateQuizPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1"
               onClick={() => addOption(qIndex)}
             >
               <FontAwesomeIcon icon={faPlus} />
@@ -379,26 +380,21 @@ export default function CreateQuizPage() {
         </div>
       ))}
 
-      {/* Footer */}
       <div className="flex justify-between">
-        <Button
-          variant="outline"
-          className="gap-1"
-          onClick={addQuestion}
-        >
+        <Button variant="outline" onClick={addQuestion}>
           <FontAwesomeIcon icon={faPlus} />
           Add Question
         </Button>
 
         <Button
           disabled={uploading}
-          className="bg-[#3749a9] hover:bg-[#2e3f94] text-white gap-2"
+          className="bg-[#3749a9] text-white gap-2"
           onClick={handleSubmit}
         >
           {uploading ? (
             <>
               <FontAwesomeIcon icon={faSpinner} spin />
-              Uploading Quiz...
+              Saving...
             </>
           ) : (
             "Save Quiz"

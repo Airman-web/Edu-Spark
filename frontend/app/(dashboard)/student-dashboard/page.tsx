@@ -82,24 +82,34 @@ const leaderboardTop5 = [
   { rank: 12, name: "You", points: 2890, isMe: true },
 ];
 
-// ─── Score colour helper ──────────────────────────────────────────────────────
+// Score colour helper 
 function scoreMeta(score: number) {
   if (score >= 85) return { bg: "#e6f9f0", text: "#1b9e5a", bar: "#1b9e5a" };
   if (score >= 70) return { bg: "#fef9e7", text: "#b7791f", bar: "#f6ad55" };
   return { bg: "#fdecea", text: "#c0392b", bar: "#fc8181" };
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// Component 
 export default function StudentDashboardPage() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [userName, setUserName] = useState("Student");
+  const [userInfo, setUserInfo] = useState({
+      firstName: "",
+      role: "",
+    });
 
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       setAuthorized(true);
       return;
     }
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    
+        setUserInfo({
+          firstName: user?.profile?.firstName || "",
+          role: user?.role || "",
+        });
 
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");

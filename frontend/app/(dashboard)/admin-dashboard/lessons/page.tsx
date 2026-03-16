@@ -11,6 +11,7 @@ import {
   LuCopy,
   LuPencil,
   LuTrash2,
+  LuUsers,
 } from "react-icons/lu";
 import StatsCard from "@/components/StatsCard";
 import {
@@ -37,6 +38,7 @@ import {
   DeleteLessonModal,
 } from "@/components/modals/LessonModals";
 import { useRouter } from "next/navigation";
+import EmptyTableState from "@/components/common/EmptyTableState";
 
 type BackendLesson = {
   lesson_id: string;
@@ -227,76 +229,123 @@ export default function LessonsPage() {
 
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Course</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Points</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[60px]">Actions</TableHead>
+            <TableRow className="bg-[#f7f8fc] border-b border-[#e4e6f0]">
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+                Title
+              </TableHead>
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+                Course
+              </TableHead>
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+                Type
+              </TableHead>
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+                Points
+              </TableHead>
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+                Created
+              </TableHead>
+              <TableHead className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#7b82a8] w-[80px]">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {lessons.map((l) => (
-              <TableRow key={l.lesson_id}>
-                <TableCell>{l.title}</TableCell>
-                <TableCell>{l.course_title}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {l.content_type}
-                  </Badge>
-                </TableCell>
-                <TableCell>{l.points_reward}</TableCell>
-                <TableCell>
-                  {l.created_at && !isNaN(new Date(l.created_at).getTime())
-                    ? new Date(l.created_at).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <LuEllipsis size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setViewLesson(l)}>
-                        <LuEye size={14} className="mr-2" /> View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                            router.push(`/admin-dashboard/lessons/${l.lesson_id}/quiz`)
-                        }
-                        >
-                        <LuFileText size={14} className="mr-2" /> Create Quiz
-                        </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          navigator.clipboard.writeText(l.lesson_id)
-                        }
-                      >
-                        <LuCopy size={14} className="mr-2" /> Copy ID
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setEditLesson(l)}>
-                        <LuPencil size={14} className="mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => setDeleteLesson(l)}
-                      >
-                        <LuTrash2 size={14} className="mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {lessons.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <EmptyTableState
+                    icon={LuFileText}
+                    title="No lessons found"
+                    description="Lessons will appear here once added."
+                    actionLabel="Add Lesson"
+                    onAction={() => setShowAdd(true)}
+                  />
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              lessons.map((l) => (
+                <TableRow
+                  key={l.lesson_id}
+                  className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
+                >
+                  <TableCell className="px-6 py-4 font-semibold text-[#0f1535] text-[13.5px]">
+                    {l.title}
+                  </TableCell>
+
+                  <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
+                    {l.course_title}
+                  </TableCell>
+
+                  <TableCell className="px-6 py-4">
+                    <Badge variant="secondary">
+                      {l.content_type}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
+                    {l.points_reward}
+                  </TableCell>
+
+                  <TableCell className="px-6 py-4 text-[12.5px] text-[#9ba3c7]">
+                    {l.created_at && !isNaN(new Date(l.created_at).getTime())
+                      ? new Date(l.created_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </TableCell>
+
+                  <TableCell className="px-4 py-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <LuEllipsis size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setViewLesson(l)}>
+                          <LuEye size={14} className="mr-2" /> View
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              `/admin-dashboard/lessons/${l.lesson_id}/quiz`
+                            )
+                          }
+                        >
+                          <LuFileText size={14} className="mr-2" /> Create Quiz
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigator.clipboard.writeText(l.lesson_id)
+                          }
+                        >
+                          <LuCopy size={14} className="mr-2" /> Copy ID
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem onClick={() => setEditLesson(l)}>
+                          <LuPencil size={14} className="mr-2" /> Edit
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteLesson(l)}
+                        >
+                          <LuTrash2 size={14} className="mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

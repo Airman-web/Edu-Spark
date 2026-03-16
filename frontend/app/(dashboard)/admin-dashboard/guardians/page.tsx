@@ -50,6 +50,7 @@ import {
   flexRender,
   ColumnDef,
 } from "@tanstack/react-table";
+import EmptyTableState from "@/components/common/EmptyTableState";
 
 
 
@@ -249,7 +250,18 @@ export default function GuardiansPage() {
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows.map((row) => (
+                {table.getRowModel().rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length + 1}>
+                      <EmptyTableState
+                        icon={LuShieldCheck}
+                        title="No guardians found"
+                        description="Guardians will appear here once registered."
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
                     className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
@@ -301,7 +313,8 @@ export default function GuardiansPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
             </TableBody>
           </Table>
 

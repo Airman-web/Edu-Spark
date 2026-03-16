@@ -42,6 +42,7 @@ function FormField({
   required,
   icon: Icon,
   options,
+  disabled,
 }: {
   id: string;
   label: string;
@@ -52,6 +53,7 @@ function FormField({
   required?: boolean;
   icon: React.ElementType;
   options?: { label: string; value: string }[];
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -70,11 +72,14 @@ function FormField({
 
         {type === "select" ? (
           <select
+            disabled={disabled}
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             required={required}
-            className="w-full rounded-lg border border-[#e4e6f0] bg-[#f7f8fc] px-3 py-2.5 pl-9 text-[13px] text-[#0f1535] outline-none focus:border-[#3749a9] focus:bg-white focus:ring-2 focus:ring-[#3749a9]/10 transition-all appearance-none"
+            className={`w-full rounded-lg border border-[#e4e6f0] bg-[#f7f8fc] px-3 py-2.5 pl-9 text-[13px] text-[#0f1535] outline-none transition-all appearance-none
+            ${disabled ? "opacity-60 cursor-not-allowed" : "focus:border-[#3749a9] focus:bg-white focus:ring-2 focus:ring-[#3749a9]/10"}
+          `}
           >
             {options?.map((option) => (
               <option key={option.value} value={option.value}>
@@ -282,8 +287,12 @@ export function AddEditLessonModal({
     }
   }, [lesson, open]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (courses.length === 0) {
+      toast.error("Please create a course before adding a lesson");
+      return;
+  }
 
     try {
         setLoading(true);
@@ -366,12 +375,16 @@ export function AddEditLessonModal({
             onChange={(v) => setForm({ ...form, course_id: v })}
             required
             icon={LuBookOpen}
+            disabled={courses.length === 0}
             options={[
-              { label: "Select Course", value: "" },
-              ...courses.map((c) => ({
-                label: `${c.title} - ${c.grade_group?.name || ""}`,
-                value: c.course_id,
-              })),
+              courses.length === 0
+                ? { label: "No courses added yet", value: "" }
+                :
+                { label: "Select Course", value: "" },
+                ...courses.map((c) => ({
+                  label: `${c.title} - ${c.grade_group?.name || ""}`,
+                  value: c.course_id,
+                })),
             ]}
           />
 

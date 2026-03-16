@@ -8,13 +8,73 @@ interface HeaderProps {
   sidebarWidth: number;
 }
 
+// function to generate welcome message based on role and name
+function getWelcomeContent(role: string, firstName: string) {
+  const name = firstName || "User";
+
+  switch (role?.toLowerCase()) {
+    case "admin":
+      return {
+        title: `${getGreeting()}, ${name} 👋`,
+        subtitle:
+          "Manage students, guardians, courses and system performance.",
+      };
+
+    case "guardian":
+      return {
+        title: `${getGreeting()}, ${name} 👋`,
+        subtitle:
+          "Track your children's progress and stay updated on their learning journey.",
+      };
+
+    case "student":
+      return {
+        title: `${getGreeting()}, ${name} 👋`,
+        subtitle:
+          "Continue your learning and climb the leaderboard.",
+      };
+
+    default:
+      return {
+        title: `Welcome back, ${name} 👋`,
+        subtitle: "",
+      };
+  }
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const unreadCount = 0;
 
+  const [userInfo, setUserInfo] = useState({
+    firstName: "",
+    role: "",
+  });
+
+
   // Close panel on outside click
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+    const user = JSON.parse(storedUser);
+
+    const firstName =
+      user?.full_name?.split(" ")[0] || "";
+      setUserInfo({
+        firstName,
+        role: user?.role || "",
+      });
+    }
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setNotifOpen(false);
@@ -23,6 +83,11 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
     if (notifOpen) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
+
+  const { title, subtitle } = getWelcomeContent(
+    userInfo.role,
+    userInfo.firstName
+  );
 
   return (
     <>
@@ -51,13 +116,15 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
           <LuSearch size={16} color="#7b82a8" />
         </button>
 
-       <div className="hidden sm:flex flex-1 flex-col">
-        <h1 className="text-[15px] font-semibold text-[#0f1535]">
-          Welcome back 👋
-        </h1>
-        <p className="text-[12px] text-[#7b82a8]">
-          Manage students, guardians, courses and analytics
-        </p>
+       <div className="flex flex-col">
+        <span className="text-sm font-semibold text-[#0f1535]">
+          {title}
+        </span>
+        {subtitle && (
+          <span className="text-xs text-[#7b82a8]">
+            {subtitle}
+          </span>
+        )}
       </div>
 
         {/* Spacer */}

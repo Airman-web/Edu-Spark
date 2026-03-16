@@ -14,6 +14,7 @@ import {
   LuCopy,
   LuPencil,
   LuTrash2,
+  LuUsers,
 } from "react-icons/lu";
 import StatsCard from "@/components/StatsCard";
 import {
@@ -39,6 +40,7 @@ import {
   AddEditCourseModal,
   DeleteCourseModal,
 } from "@/components/modals/CourseModals";
+import EmptyTableState from "@/components/common/EmptyTableState";
 
 type BackendCourse = {
   course_id: string;
@@ -342,62 +344,77 @@ export default function CoursesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {courses.map((c) => (
-                <TableRow
-                  key={c.course_id}
-                  className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
-                >
-                  <TableCell className="px-6 py-4 font-semibold text-[#0f1535] text-[13.5px]">
-                    {c.title}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge variant="secondary">{c.grade_group}</Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[13px] text-[#7b82a8] hidden md:table-cell max-w-[200px] truncate">
-                    {c.description || "—"}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
-                    {c.lessons_count}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[12.5px] text-[#9ba3c7] hidden lg:table-cell">
-                    {c.created_at}
-                  </TableCell>
-                  <TableCell className="px-4 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <LuEllipsis size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="min-w-[160px]"
-                      >
-                        <DropdownMenuItem onClick={() => setViewCourse(c)}>
-                          <LuEye size={14} className="mr-2" /> View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigator.clipboard.writeText(c.course_id)
-                          }
-                        >
-                          <LuCopy size={14} className="mr-2" /> Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setEditCourse(c)}>
-                          <LuPencil size={14} className="mr-2" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => setDeleteCourse(c)}
-                        >
-                          <LuTrash2 size={14} className="mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {courses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <EmptyTableState
+                      icon={LuBookOpen}
+                      title="No courses found"
+                      description="Courses will appear here once added."
+                      actionLabel="Add Course"
+                      onAction={() => setShowAdd(true)}
+                    />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+
+                courses.map((c) => (
+                  <TableRow
+                    key={c.course_id}
+                    className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
+                  >
+                    <TableCell className="px-6 py-4 font-semibold text-[#0f1535] text-[13.5px]">
+                      {c.title}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge variant="secondary">{c.grade_group}</Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[13px] text-[#7b82a8] hidden md:table-cell max-w-[200px] truncate">
+                      {c.description || "—"}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
+                      {c.lessons_count}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[12.5px] text-[#9ba3c7] hidden lg:table-cell">
+                      {c.created_at}
+                    </TableCell>
+                    <TableCell className="px-4 py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <LuEllipsis size={16} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="min-w-[160px]"
+                        >
+                          <DropdownMenuItem onClick={() => setViewCourse(c)}>
+                            <LuEye size={14} className="mr-2" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigator.clipboard.writeText(c.course_id)
+                            }
+                          >
+                            <LuCopy size={14} className="mr-2" /> Copy ID
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setEditCourse(c)}>
+                            <LuPencil size={14} className="mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => setDeleteCourse(c)}
+                          >
+                            <LuTrash2 size={14} className="mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+              ))
+            )}
             </TableBody>
           </Table>
         </div>

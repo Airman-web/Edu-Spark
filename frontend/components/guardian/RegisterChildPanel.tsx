@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LuCopy, LuEye, LuEyeOff, LuLink } from "react-icons/lu";
+import { LuCopy, LuEye, LuEyeOff } from "react-icons/lu";
 
 import {
   LuUser,
@@ -16,10 +16,18 @@ import {
   LuX,
 } from "react-icons/lu";
 
+import type { Student } from "@/components/modals/StudentModals";
+
 type GradeGroup = {
   grade_group_id: string;
   name: string;
 };
+
+interface RegisterChildPanelProps {
+  student?: Student | null;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
 
 function FormField({
   label,
@@ -60,88 +68,14 @@ function FormField({
   );
 }
 
-function PasswordToast({
-  loginUrl,
-  username,
-  password,
-}: {
-  loginUrl: string;
-  username: string;
-  password: string;
-}) {
-  const [visible, setVisible] = React.useState(false);
-
-  return (
-    <div className="bg-white border border-[#e4e6f0] rounded-xl shadow-lg p-5 w-[360px] space-y-3">
-
-      <div className="text-sm font-semibold text-[#0f1535]">
-        Student Registered Successfully 🎉
-      </div>
-
-      <div className="text-xs text-[#7b82a8]">
-        Your child can now log in using the credentials below:
-      </div>
-
-      <div className="bg-[#f7f8fc] p-3 rounded-lg space-y-3 text-xs">
-
-        {/* Login Link */}
-        <div>
-          <span className="text-[#9ba3c7]">Login Link:</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-[#3749a9] truncate">
-              {loginUrl}
-            </span>
-            <button
-              onClick={() => navigator.clipboard.writeText(loginUrl)}
-              className="text-[#3749a9]"
-            >
-              <LuCopy size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Username */}
-        <div>
-          <span className="text-[#9ba3c7]">Username:</span>
-          <div className="font-medium text-[#0f1535]">
-            {username}
-          </div>
-        </div>
-
-        {/* Password with Reveal */}
-        <div>
-          <span className="text-[#9ba3c7]">Password:</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="font-medium text-[#0f1535]">
-              {visible ? password : "••••••••"}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setVisible(!visible)}
-              className="text-[#3749a9]"
-            >
-              {visible ? <LuEyeOff size={14} /> : <LuEye size={14} />}
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <div className="text-[11px] text-[#9ba3c7]">
-        Please keep these credentials safe. The password can be changed after first login.
-      </div>
-    </div>
-  );
-}
-
 export default function RegisterChildPanel({
+  student,
   onSuccess,
   onCancel,
-}: {
-  onSuccess: () => void;
-  onCancel: () => void;
-}) {
+}: RegisterChildPanelProps) {
+
+  const isEdit = !!student;
+
   const [form, setForm] = useState({
     grade_group_id: "",
     full_name: "",
@@ -151,38 +85,62 @@ export default function RegisterChildPanel({
     password: "",
     profile_image_url: "",
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-   const [visible, setVisible] = React.useState(false);
 
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [gradeGroups, setGradeGroups] = useState<GradeGroup[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB limit
+
   const removeImage = () => {
     setImagePreview(null);
-
     setForm((prev) => ({
-        ...prev,
-        profile_image_url: "",
+      ...prev,
+      profile_image_url: "",
     }));
-    };
+  };
 
   const handleImageUpload = (file: File) => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Image must be 1MB or smaller");
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onloadend = () => {
-        const base64String = reader.result as string;
+      const base64String = reader.result as string;
 
-        setImagePreview(base64String);
-
-        // Saving the base64 image into form
-        setForm((prev) => ({
+      setImagePreview(base64String);
+      setForm((prev) => ({
         ...prev,
         profile_image_url: base64String,
-        }));
+      }));
     };
 
     reader.readAsDataURL(file);
-    };
+  };
+
+  // Prefill when editing
+  useEffect(() => {
+    if (student) {
+      setForm({
+        grade_group_id: (student as any).grade_group_id || "",
+        full_name: student.full_name || "",
+        display_name: student.display_name || "",
+        date_of_birth: student.date_of_birth
+          ? student.date_of_birth.split("T")[0]
+          : "",
+        disability_info: student.disability_info || "",
+        password: "",
+        profile_image_url: (student as any).profile_image_url || "",
+      });
+
+      if ((student as any).profile_image_url) {
+        setImagePreview((student as any).profile_image_url);
+      }
+    }
+  }, [student]);
 
   // Fetch Grade Groups
   useEffect(() => {
@@ -213,45 +171,53 @@ export default function RegisterChildPanel({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submittedPassword = form.password;
-    const submittedDisplayName = form.display_name;
 
     try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
+      setLoading(true);
+      const token = localStorage.getItem("token");
 
-        const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/students`,
-        {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(form), // now includes base64
-        }
+      const endpoint = isEdit
+        ? `${process.env.NEXT_PUBLIC_API_URL}/students/${student?.student_id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/students`;
+
+      const method = isEdit ? "PATCH" : "POST";
+
+      // Removing empty password field in edit mode to avoid overwriting existing password with empty value
+      const payload = { ...form };
+
+      if (isEdit && !payload.password) {
+        delete (payload as any).password;
+      }
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData?.message?.join?.(", ") ||
+          errorData?.message ||
+          "Failed to save child"
         );
+      }
 
-        if (!res.ok) throw new Error("Failed to register child");
+      toast.success(
+        isEdit ? "Student updated successfully" : "Student registered successfully"
+      );
 
-        toast.custom((t) => {
-            const loginUrl = `${window.location.origin}/login`;
-
-            return (
-                <PasswordToast
-                loginUrl={loginUrl}
-                username={submittedDisplayName}
-                password={submittedPassword}
-                />
-            );
-            });
-        onSuccess();
+      onSuccess();
     } catch (err: any) {
-        toast.error(err.message);
+      toast.error(err.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    };
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm overflow-hidden">
@@ -259,10 +225,12 @@ export default function RegisterChildPanel({
       {/* Header */}
       <div className="bg-[#3749a9] px-8 py-6">
         <h2 className="text-white text-lg font-semibold">
-          Register My Child
+          {isEdit ? "Edit Child Information" : "Register My Child"}
         </h2>
         <p className="text-white/70 text-sm mt-1">
-          Enter your child’s information below
+          {isEdit
+            ? "Update your child’s information below"
+            : "Enter your child’s information below"}
         </p>
       </div>
 
@@ -293,10 +261,8 @@ export default function RegisterChildPanel({
           />
         </div>
 
-        {/* Grade + DOB */}
+        {/* Grade and DOB */}
         <div className="grid md:grid-cols-2 gap-6">
-
-          {/* Grade Dropdown */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[12px] font-semibold uppercase tracking-wider text-[#7b82a8]">
               Grade Group
@@ -337,90 +303,82 @@ export default function RegisterChildPanel({
           />
         </div>
 
-        {/* Disability and Password Info */}
+        {/* Disability and Password */}
         <div className="grid md:grid-cols-2 gap-6">
+          <FormField
+            label="Disability Information"
+            icon={LuAccessibility}
+            value={form.disability_info}
+            onChange={(v: string) =>
+              setForm({ ...form, disability_info: v })
+            }
+            placeholder="Optional"
+          />
 
-            <FormField
-                label="Disability Information"
-                icon={LuAccessibility}
-                value={form.disability_info}
-                onChange={(v: string) =>
-                setForm({ ...form, disability_info: v })
-                }
-                placeholder="Optional"
-                description="If your child has any special learning needs, please describe briefly."
-            />
-
-            <FormField
-                label="Password"
-                icon={LuLock}
-                type="password"
-                value={form.password}
-                onChange={(v: string) =>
-                setForm({ ...form, password: v })
-                }
-                placeholder="••••••••"
-                required
-            />
-            </div>
+          <FormField
+            label={isEdit ? "New Password (Optional)" : "Password"}
+            icon={LuLock}
+            type="password"
+            value={form.password}
+            onChange={(v: string) =>
+              setForm({ ...form, password: v })
+            }
+            placeholder="••••••••"
+            required={!isEdit}
+          />
+        </div>
 
         {/* Profile Image Upload */}
-            <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-semibold uppercase tracking-wider text-[#7b82a8]">
-                Profile Image
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[12px] font-semibold uppercase tracking-wider text-[#7b82a8]">
+            Profile Image (Max 1MB)
+          </label>
+
+          <div className="border border-dashed border-[#e4e6f0] rounded-xl p-6 text-center bg-[#f7f8fc] hover:bg-white transition-all">
+            <input
+              type="file"
+              accept="image/*"
+              id="profileUpload"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleImageUpload(e.target.files[0]);
+                }
+              }}
+            />
+
+            <label
+              htmlFor="profileUpload"
+              className="cursor-pointer flex flex-col items-center gap-3"
+            >
+              <LuImage size={28} className="text-[#9ba3c7]" />
+              <span className="text-sm text-[#4b5281]">
+                Click to upload image
+              </span>
+              <span className="text-xs text-[#9ba3c7]">
+                PNG, JPG up to 1MB
+              </span>
             </label>
+          </div>
 
-            <div className="border border-dashed border-[#e4e6f0] rounded-xl p-6 text-center bg-[#f7f8fc] hover:bg-white transition-all">
+          {imagePreview && (
+            <div className="flex justify-center mt-4 relative w-fit mx-auto">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-28 h-28 rounded-xl object-cover border border-[#e4e6f0] shadow-sm"
+              />
 
-                <input
-                type="file"
-                accept="image/*"
-                id="profileUpload"
-                className="hidden"
-                onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                    handleImageUpload(e.target.files[0]);
-                    }
-                }}
-                />
-
-                <label
-                htmlFor="profileUpload"
-                className="cursor-pointer flex flex-col items-center gap-3"
-                >
-                <LuImage size={28} className="text-[#9ba3c7]" />
-
-                <span className="text-sm text-[#4b5281]">
-                    Click to upload image
-                </span>
-
-                <span className="text-xs text-[#9ba3c7]">
-                    PNG, JPG up to 5MB
-                </span>
-                </label>
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs flex items-center justify-center shadow-md transition-all"
+              >
+                <LuX size={14} />
+              </button>
             </div>
-
-            {/* Preview */}
-            {imagePreview && (
-                <div className="flex justify-center mt-4 relative w-fit mx-auto">
-                    <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-28 h-28 rounded-xl object-cover border border-[#e4e6f0] shadow-sm"
-                    />
-
-                    {/* Remove Button */}
-                    <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs flex items-center justify-center shadow-md transition-all"
-                    >
-                    <LuX size={14} />
-                    </button>
-                </div>
-                )}
-            </div>
-
+          )}
+        </div>
 
         {/* Footer */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#f0f1f7]">
@@ -441,7 +399,7 @@ export default function RegisterChildPanel({
             {loading && (
               <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
             )}
-            Register Child
+            {isEdit ? "Save Changes" : "Register Child"}
           </Button>
         </div>
       </form>

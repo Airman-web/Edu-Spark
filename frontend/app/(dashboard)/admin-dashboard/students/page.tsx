@@ -37,6 +37,7 @@ import {
   AddEditStudentModal,
   DeleteStudentModal,
 } from "@/components/modals/StudentModals";
+import EmptyTableState from "@/components/common/EmptyTableState";
 
 import {
   useReactTable,
@@ -345,7 +346,18 @@ export default function StudentsPage() {
             </TableHeader>
 
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
+              {table.getRowModel().rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length + 1}>
+                    <EmptyTableState
+                      icon={LuUsers}
+                      title="No students found"
+                      description="Students will appear here once Registered by a Guardian."
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+              table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
@@ -402,7 +414,8 @@ export default function StudentsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
 
