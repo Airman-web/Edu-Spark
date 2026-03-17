@@ -73,8 +73,8 @@ export class CoursesService {
     });
   }
 
-  getStudentEnrollments(studentId: string) {
-    return this.prisma.enrollment.findMany({
+  async getStudentEnrollments(studentId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
       where: { student_id: studentId },
       include: {
         course: {
@@ -86,5 +86,64 @@ export class CoursesService {
       },
       orderBy: { enrolled_at: 'desc' },
     });
+
+    return Promise.all(
+      enrollments.map(async (enrollment) => {
+        const courseId = enrollment.course_id;
+
+        // Count completed lessons for this specific course
+        const completedLessonsCount = await this.prisma.studentLessonProgress.count({
+          where: {
+            student_id: studentId,
+            completed: true,
+            lesson: { course_id: courseId },
+          },
+        });
+
+        const totalLessons = enrollment.course._count.lessons;
+        const progressPercentage = totalLessons > 0 ? (completedLessonsCount / totalLessons) * 100 : 0;
+
+        // Get quiz attempts count for quizzes attached to lessons strictly within this course
+        const quizAttemptsCount = await this.prisma.studentQuizAttempt.count({
+          where: {
+            student_id: studentId,
+            quiz: { lesson: { course_id: courseId } },
+          },
+        });
+
+        // Determine last activity: Latest lesson progress updated_at, or quiz attempt completed_at, fallback to enrolled_at
+        const lastLessonProgress = await this.prisma.studentLessonProgress.findFirst({
+          where: { student_id: studentId, lesson: { course_id: courseId } },
+          orderBy: { updated_at: 'desc' },
+          select: { updated_at: true },
+        });
+
+        const lastQuizAttempt = await this.prisma.studentQuizAttempt.findFirst({
+          where: { student_id: studentId, quiz: { lesson: { course_id: courseId } } },
+          orderBy: { completed_at: 'desc' },
+          select: { completed_at: true },
+        });
+
+        const activityDates = [
+          enrollment.enrolled_at,
+          lastLessonProgress?.updated_at,
+          lastQuizAttempt?.completed_at,
+        ].filter(Boolean) as Date[];
+
+        const lastActivity = new Date(Math.max(...activityDates.map((d) => d.getTime())));
+
+        return {
+          ...enrollment,
+          course: {
+            ...enrollment.course,
+            total_lessons: totalLessons,
+            completed_lessons: completedLessonsCount,
+            progress_percentage: Math.round(progressPercentage * 100) / 100, // Round to 2 decimals
+            quiz_attempts_count: quizAttemptsCount,
+            last_activity: lastActivity,
+          },
+        };
+      })
+    );
   }
 }

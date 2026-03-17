@@ -78,6 +78,22 @@ export class CoursesController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Post(':id/enroll/student/:studentId')
+  @ApiOperation({ summary: 'Enroll a specific student in a course (requires guardian login)' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  @ApiParam({ name: 'studentId', description: 'Student ID' })
+  @ApiResponse({ status: 201, description: 'Student enrolled successfully.' })
+  @ApiResponse({ status: 409, description: 'Student is already enrolled in this course.' })
+  @ApiResponse({ status: 404, description: 'Course or Student not found.' })
+  enrollStudent(
+    @Param('id') courseId: string,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.coursesService.enroll(courseId, studentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get('student/:studentId/enrollments')
   @ApiOperation({ summary: 'Get all courses a student is enrolled in (requires login)' })
   @ApiParam({ name: 'studentId', description: 'Student ID' })

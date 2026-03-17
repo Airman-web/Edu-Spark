@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Query, Param } from '@nestjs/common';
 import { PointsService } from './points.service';
 import {
   PointHistoryResponseDto,
@@ -45,5 +45,28 @@ export class PointsController {
   getTotal(@Request() req) {
     const studentId = req.user.student_id;
     return this.pointsService.getTotalPoints(studentId);
+  }
+  @Get('leaderboard')
+  @ApiOperation({
+    summary: 'Get the student leaderboard (Admin/Global)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return student leaderboard by points sorted descending.',
+  })
+  getLeaderboard(@Query('timeframe') timeframe?: string) {
+    return this.pointsService.getLeaderboard(timeframe);
+  }
+
+  @Get('student/:studentId/weekly')
+  @ApiOperation({
+    summary: 'Get weekly aggregated points for a specific student chart',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return array of objects mapping week start dates to points earned.',
+  })
+  getStudentWeeklyPoints(@Param('studentId') studentId: string) {
+    return this.pointsService.getStudentWeeklyPoints(studentId);
   }
 }

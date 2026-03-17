@@ -84,4 +84,27 @@ export class GuardiansService {
       };
     });
   }
+  async getStudentsCourseProgress(guardianId: string, coursesService: any) {
+    const students = await (this.prisma.student as any).findMany({
+      where: { guardian_id: guardianId },
+      select: {
+        student_id: true,
+        full_name: true,
+        display_name: true,
+        profile_image_url: true,
+      },
+    });
+
+    return Promise.all(
+      students.map(async (student) => {
+        const enrollments = await coursesService.getStudentEnrollments(student.student_id);
+        
+        return {
+          ...student,
+          name: student.display_name || student.full_name,
+          enrollments,
+        };
+      })
+    );
+  }
 }

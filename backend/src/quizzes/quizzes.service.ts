@@ -35,16 +35,15 @@ export class QuizzesService {
           },
         },
       });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ConflictException('A quiz for this lesson already exists.');
-        }
-        if (error.code === 'P2025') {
-          throw new NotFoundException('Lesson not found.');
-        }
+    } catch (error: any) {
+      if (error && error.code === 'P2002') {
+        throw new ConflictException('A quiz for this lesson already exists.');
       }
-      throw new InternalServerErrorException('An unexpected error occurred while creating the quiz.');
+      if (error && (error.code === 'P2025' || error.code === 'P2003')) {
+        throw new NotFoundException('Lesson not found. Please provide a valid lesson_id.');
+      }
+      console.error('Quiz creation failed with unhandled error:', error);
+      throw new InternalServerErrorException('An unexpected server error occurred while creating the quiz.');
     }
   }
 
