@@ -24,33 +24,53 @@ export class ProgressService {
       where: {
         student_id_lesson_id: { student_id: studentId, lesson_id },
       },
+      include: { lesson: true },
     });
 
+    let lastRewarded = 0;
+    let lessonPoints = 0;
+    let lessonTitle = '';
+
     if (existing) {
-      const wasCompleted = existing.completed;
+      lastRewarded = Number(existing.last_rewarded_percentage);
+      lessonPoints = Number(existing.lesson.points_reward);
+      lessonTitle = existing.lesson.title;
+
+      // Calculate incremental points
+      // Only award if current progress is greater than last rewarded
+      const newProgress = Math.max(0, progress_percentage - lastRewarded);
+      const pointsToAward = (newProgress / 100) * lessonPoints;
+
       const updated = await (this.prisma.studentLessonProgress as any).update({
         where: { progress_id: existing.progress_id },
         data: {
           progress_percentage,
-          completed,
+          completed: completed || existing.completed,
+          last_rewarded_percentage: Math.max(lastRewarded, progress_percentage),
         },
       });
 
-      // Award points if just completed
-      if (!wasCompleted && completed) {
-        const lesson = await (this.prisma.lesson as any).findUnique({
-          where: { lesson_id },
-        });
-        if (lesson) {
-          await this.pointsService.addPoints(
-            studentId,
-            Number(lesson.points_reward),
-            `Lesson Completion: ${lesson.title}`,
-          );
-        }
+      if (pointsToAward > 0) {
+        await this.pointsService.addPoints(
+          studentId,
+          pointsToAward,
+          `Lesson Progress: ${lessonTitle} (${progress_percentage}%)`,
+        );
       }
+
       return updated;
     }
+
+    // New progress record
+    const lesson = await (this.prisma.lesson as any).findUnique({
+      where: { lesson_id },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+
+    const pointsToAward = (progress_percentage / 100) * Number(lesson.points_reward);
 
     const created = await (this.prisma.studentLessonProgress as any).create({
       data: {
@@ -58,20 +78,16 @@ export class ProgressService {
         lesson_id,
         progress_percentage,
         completed,
+        last_rewarded_percentage: progress_percentage,
       },
     });
 
-    if (completed) {
-      const lesson = await (this.prisma.lesson as any).findUnique({
-        where: { lesson_id },
-      });
-      if (lesson) {
-        await this.pointsService.addPoints(
-          studentId,
-          Number(lesson.points_reward),
-          `Lesson Completion: ${lesson.title}`,
-        );
-      }
+    if (pointsToAward > 0) {
+      await this.pointsService.addPoints(
+        studentId,
+        pointsToAward,
+        `Lesson Progress: ${lesson.title} (${progress_percentage}%)`,
+      );
     }
 
     return created;

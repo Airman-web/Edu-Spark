@@ -136,8 +136,9 @@ model StudentLessonProgress {
   progress_id         String   @id @default(uuid())
   student_id          String
   lesson_id           String
-  progress_percentage Decimal  @db.Decimal(5, 2)
-  completed           Boolean
+  progress_percentage     Decimal  @db.Decimal(5, 2)
+  last_rewarded_percentage Decimal  @db.Decimal(5, 2) @default(0)
+  completed               Boolean
   updated_at          DateTime @default(now()) @updatedAt
 
   student Student @relation(fields: [student_id], references: [student_id])
