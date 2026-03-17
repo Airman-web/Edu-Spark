@@ -106,4 +106,32 @@ export class PointsService {
       points: weeklyPoints[weekStart],
     })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
   }
+
+  async getAllStudentsWeeklyPoints() {
+    const history = await (this.prisma.pointsHistory as any).findMany({
+      orderBy: { created_at: 'asc' },
+    });
+
+    const weeklyPoints: { [weekStart: string]: number } = {};
+
+    history.forEach((record) => {
+      const date = new Date(record.created_at);
+      // Get the start of the week for this record (Sunday)
+      const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay()));
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const weekKey = startOfWeek.toISOString().split('T')[0];
+
+      if (!weeklyPoints[weekKey]) {
+        weeklyPoints[weekKey] = 0;
+      }
+      weeklyPoints[weekKey] += Number(record.points);
+    });
+
+    // Convert object to array for easier charting
+    return Object.keys(weeklyPoints).map((weekStart) => ({
+      week: weekStart,
+      points: weeklyPoints[weekStart],
+    })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+  }
 }

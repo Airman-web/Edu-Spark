@@ -10,6 +10,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 @ApiTags('points')
@@ -50,12 +51,29 @@ export class PointsController {
   @ApiOperation({
     summary: 'Get the student leaderboard (Admin/Global)',
   })
+  @ApiQuery({
+    name: 'timeframe',
+    required: false,
+    description: 'Filter timeframe. Pass "weekly" to get only this week\'s points.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Return student leaderboard by points sorted descending.',
   })
   getLeaderboard(@Query('timeframe') timeframe?: string) {
     return this.pointsService.getLeaderboard(timeframe);
+  }
+
+  @Get('all-student/weekly')
+  @ApiOperation({
+    summary: 'Get weekly aggregated points for all students (Admin/Global)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return array mapping week start dates to points earned across all students.',
+  })
+  getAllStudentsWeeklyPoints() {
+    return this.pointsService.getAllStudentsWeeklyPoints();
   }
 
   @Get('student/:studentId/weekly')
