@@ -138,6 +138,7 @@ model StudentLessonProgress {
   lesson_id           String
   progress_percentage     Decimal  @db.Decimal(5, 2)
   last_rewarded_percentage Decimal  @db.Decimal(5, 2) @default(0)
+  points              Decimal  @db.Decimal(10, 2) @default(0)
   completed               Boolean
   updated_at          DateTime @default(now()) @updatedAt
 

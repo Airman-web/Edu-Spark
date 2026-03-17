@@ -58,6 +58,17 @@ describe('ProgressService Incremental Progress', () => {
     mockPrisma.studentLessonProgress.create.mockResolvedValue({ progress_id: 'p1' });
 
     await service.updateLessonProgress(mockStudentId, dto);
+    
+    expect(prisma.studentLessonProgress.create).toHaveBeenCalledWith({
+      data: {
+        student_id: mockStudentId,
+        lesson_id: mockLessonId,
+        progress_percentage: 20,
+        completed: false,
+        last_rewarded_percentage: 20,
+        points: 20,
+      },
+    });
 
     // 20% of 100 points = 20 points
     expect(pointsService.addPoints).toHaveBeenCalledWith(

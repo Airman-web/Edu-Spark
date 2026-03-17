@@ -20,9 +20,9 @@ import {
   AdminCourseResponseDto,
   AdminLessonResponseDto,
 } from './dto/admin-response.dto';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { AdminCreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { CreateLessonDto } from './dto/create-lesson.dto';
+import { AdminCreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import {
   RegisterGuardianDto,
@@ -100,7 +100,7 @@ export class AdminController {
     description: 'Course with this title already exists for the grade group',
   })
   @ApiNotFoundResponse({ description: 'Grade group not found' })
-  createCourse(@Body() createCourseDto: CreateCourseDto) {
+  createCourse(@Body() createCourseDto: AdminCreateCourseDto) {
     return this.adminService.createCourse(createCourseDto);
   }
 
@@ -166,7 +166,7 @@ export class AdminController {
     description: 'Lesson with this title already exists for the course',
   })
   @ApiNotFoundResponse({ description: 'Course not found' })
-  createLesson(@Body() createLessonDto: CreateLessonDto) {
+  createLesson(@Body() createLessonDto: AdminCreateLessonDto) {
     return this.adminService.createLesson(createLessonDto);
   }
 
