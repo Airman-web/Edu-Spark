@@ -3,6 +3,8 @@ import { PointsService } from './points.service';
 import {
   PointHistoryResponseDto,
   PointTotalResponseDto,
+  LeaderboardResponseDto,
+  WeeklyPointsResponseDto,
 } from './dto/points-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
@@ -59,6 +61,7 @@ export class PointsController {
   @ApiResponse({
     status: 200,
     description: 'Return student leaderboard by points sorted descending.',
+    type: [LeaderboardResponseDto],
   })
   getLeaderboard(@Query('timeframe') timeframe?: string) {
     return this.pointsService.getLeaderboard(timeframe);
@@ -71,6 +74,7 @@ export class PointsController {
   @ApiResponse({
     status: 200,
     description: 'Return array mapping week start dates to points earned across all students.',
+    type: [WeeklyPointsResponseDto],
   })
   getAllStudentsWeeklyPoints() {
     return this.pointsService.getAllStudentsWeeklyPoints();
@@ -83,6 +87,7 @@ export class PointsController {
   @ApiResponse({
     status: 200,
     description: 'Return array of objects mapping week start dates to points earned.',
+    type: [WeeklyPointsResponseDto],
   })
   getStudentWeeklyPoints(@Param('studentId') studentId: string) {
     return this.pointsService.getStudentWeeklyPoints(studentId);
