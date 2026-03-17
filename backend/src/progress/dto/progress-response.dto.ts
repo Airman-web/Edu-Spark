@@ -31,6 +31,9 @@ export class LessonProgressResponseDto {
   @ApiProperty({ example: true })
   completed: boolean;
 
+  @ApiProperty({ example: 25.5, description: 'Total points earned for this lesson' })
+  points: number;
+
   @ApiProperty({ example: '2026-03-05T00:00:00.000Z' })
   last_accessed: Date;
 }

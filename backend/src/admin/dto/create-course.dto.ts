@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 
-export class CreateCourseDto {
+export class AdminCreateCourseDto {
   @ApiProperty({
     example: 'gg-123',
     description: 'The ID of the grade group this course belongs to',

@@ -5,9 +5,9 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { AdminCreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { CreateLessonDto } from './dto/create-lesson.dto';
+import { AdminCreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import {
   RegisterGuardianDto,
@@ -110,7 +110,7 @@ export class AdminService {
     });
   }
 
-  async createCourse(data: CreateCourseDto) {
+  async createCourse(data: AdminCreateCourseDto) {
     try {
       return await (this.prisma.course as any).create({
         data: {
@@ -347,7 +347,7 @@ export class AdminService {
     });
   }
 
-  async createLesson(data: CreateLessonDto) {
+  async createLesson(data: AdminCreateLessonDto) {
     try {
       return await (this.prisma.lesson as any).create({
         data: {

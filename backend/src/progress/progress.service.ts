@@ -47,6 +47,7 @@ export class ProgressService {
           progress_percentage,
           completed: completed || existing.completed,
           last_rewarded_percentage: Math.max(lastRewarded, progress_percentage),
+          points: { increment: pointsToAward },
         },
       });
 
@@ -79,6 +80,7 @@ export class ProgressService {
         progress_percentage,
         completed,
         last_rewarded_percentage: progress_percentage,
+        points: pointsToAward,
       },
     });
 
@@ -114,9 +116,22 @@ export class ProgressService {
   }
 
   async getStudentProgress(studentId: string) {
-    return (this.prisma.studentLessonProgress as any).findMany({
-      where: { student_id: studentId },
-      include: { lesson: true },
-    });
+    const [lessonProgress, quizAttempts, totalPoints] = await Promise.all([
+      (this.prisma.studentLessonProgress as any).findMany({
+        where: { student_id: studentId },
+        include: { lesson: true },
+      }),
+      (this.prisma.studentQuizAttempt as any).findMany({
+        where: { student_id: studentId },
+        include: { quiz: { include: { lesson: true } } },
+      }),
+      this.pointsService.getTotalPoints(studentId),
+    ]);
+
+    return {
+      completed_lessons: lessonProgress,
+      quiz_attempts: quizAttempts,
+      total_points: totalPoints,
+    };
   }
 }
