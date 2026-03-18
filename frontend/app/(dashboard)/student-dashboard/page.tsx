@@ -6,9 +6,9 @@ import {
   LuFileCheck,
   LuStar,
   LuTarget,
-  LuFlame,
   LuBookOpen,
   LuTrophy,
+  LuHistory,
 } from "react-icons/lu";
 
 export default function StudentDashboardPage() {
@@ -21,8 +21,9 @@ export default function StudentDashboardPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [progress, setProgress] = useState<any>(null);
-  const [pointsTotal, setPointsTotal] = useState(0);
+  const pointsTotal = Number(progress?.total_points || 0);
   const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
 
   useEffect(() => {
@@ -58,38 +59,61 @@ export default function StudentDashboardPage() {
 
         setProfileImage(avatar);
 
-        const [progressRes, pointsRes, enrollmentsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/progress`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/points/total`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/courses/student/${studentId}/enrollments`,
-            {
+        // order implemented to fetch all data in parallel
+        const [progressRes, enrollmentsRes, leaderboardRes] =
+          await Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/progress`, {
               headers: { Authorization: `Bearer ${token}` },
-            }
-          ),
-        ]);
+            }),
+            fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/courses/student/${studentId}/enrollments`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            ),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/points/leaderboard`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
 
+        // progress
         if (progressRes.ok) {
           const data = await progressRes.json();
+          console.log("🔥 RAW PROGRESS DATA:", data);
+  console.log("🔥 RAW total_points:", data?.total_points);
           setProgress(data);
         }
 
-        if (pointsRes.ok) {
-          const data = await pointsRes.json();
-          setPointsTotal(data?.total_points || 0);
-        }
-
+        // all enrollments
         if (enrollmentsRes.ok) {
           const data = await enrollmentsRes.json();
           setEnrollments(data || []);
         }
 
-        setLeaderboardRank(12); 
+        // leaderboard
+        if (leaderboardRes.ok) {
+          const data = await leaderboardRes.json();
 
+          const sorted = [...data].sort(
+            (a, b) =>
+              Number(b.total_points) - Number(a.total_points)
+          );
+
+          setLeaderboard(sorted);
+
+          const rank =
+            sorted.findIndex(
+              (s) => s.student_id === studentId
+            ) + 1;
+
+          setLeaderboardRank(rank > 0 ? rank : null);
+
+          const me = sorted.find(
+            (s) => s.student_id === studentId
+          );
+
+          if (me?.profile_image_url) {
+            setProfileImage(me.profile_image_url);
+          }
+        }
       } catch (err) {
         console.error("Dashboard error:", err);
       } finally {
@@ -100,7 +124,6 @@ export default function StudentDashboardPage() {
     fetchDashboard();
   }, []);
 
-  // spinner loading state
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center">
@@ -114,56 +137,71 @@ export default function StudentDashboardPage() {
 
   if (!authorized) return null;
 
-  const completedLessons = progress?.completed_lessons?.length || 0;
+  const completedLessons =
+    progress?.completed_lessons?.filter(
+      (l: any) => l.completed === true
+    ).length || 0;
+
   const quizAttempts = progress?.quiz_attempts || [];
 
   const quizAverage =
     quizAttempts.length > 0
       ? Math.round(
-          quizAttempts.reduce((sum: number, q: any) => sum + q.score, 0) /
-            quizAttempts.length
+          quizAttempts.reduce(
+            (sum: number, q: any) => sum + q.score,
+            0
+          ) / quizAttempts.length
         )
       : 0;
 
-  // Leaderboard progress for the student
-  const progressToNextRank = Math.min((pointsTotal % 100), 100);
+  //  leaderboard progress logic
+  let progressToNextRank = 100;
+  let pointsToNextRank = 0;
+
+  if (leaderboardRank && leaderboardRank > 1) {
+    const nextPlayer = leaderboard[leaderboardRank - 2];
+
+    if (nextPlayer) {
+      const nextPoints = Number(nextPlayer.total_points);
+      pointsToNextRank = Math.max(
+        nextPoints - pointsTotal,
+        0
+      );
+      progressToNextRank =
+        (pointsTotal / nextPoints) * 100;
+    }
+  }
 
   return (
     <div className="py-6 space-y-6">
 
-      {/* The hero section */}
-      <div className="relative bg-gradient-to-r from-[#3749a9] to-[#5b2d8a] rounded-3xl p-8 text-white shadow-xl overflow-hidden">
-
-        <div className="flex items-center gap-6 relative z-10">
-
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse blur-md"></div>
-
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt="Profile"
-                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-2xl animate-float"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-yellow-400 flex items-center justify-center text-3xl font-bold shadow-2xl animate-float">
-                {userName.charAt(0)}
-              </div>
-            )}
-          </div>
+      {/* HERO */}
+      <div className="bg-gradient-to-r from-[#3749a9] to-[#5b2d8a] rounded-3xl p-8 text-white shadow-xl">
+        <div className="flex items-center gap-6">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-2xl animate-float animate-glow"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-yellow-400 flex items-center justify-center text-3xl font-bold shadow-2xl animate-float animate-glow">
+              {userName.charAt(0)}
+            </div>
+          )}
 
           <div>
             <h1 className="text-3xl font-bold">
               Hi {userName}! 👋
             </h1>
             <p className="text-white/80 mt-2">
-              Keep learning and reach the top!
+              Keep learning and climb the leaderboard!
             </p>
           </div>
         </div>
       </div>
 
-      {/* stats section */}
+      {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard icon={<LuStar />} label="Total Points" value={pointsTotal} color="text-[#3749a9]" />
         <StatCard icon={<LuFileCheck />} label="Lessons Completed" value={completedLessons} color="text-[#1b2561]" />
@@ -171,14 +209,11 @@ export default function StudentDashboardPage() {
         <StatCard icon={<LuBookOpen />} label="Enrolled Courses" value={enrollments.length} color="text-[#5b2d8a]" />
       </div>
 
-      {/* Leaderboard including progress bar */}
+      {/* LEADERBOARD */}
       <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-6">
-
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-[15px] font-bold text-[#0f1535]">
-              Leaderboard Position
-            </h2>
+            <h2 className="text-[15px] font-bold">Leaderboard Position</h2>
             <p className="text-sm text-[#7b82a8] mt-1">
               Keep earning to climb higher!
             </p>
@@ -192,73 +227,60 @@ export default function StudentDashboardPage() {
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="mt-4">
           <div className="w-full h-3 bg-[#f0f1f7] rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#3749a9] to-[#8b5cf6] transition-all duration-1000"
+              className="h-full bg-gradient-to-r from-[#3749a9] to-[#8b5cf6] transition-all duration-700"
               style={{ width: `${progressToNextRank}%` }}
             />
           </div>
-          <p className="text-xs text-[#7b82a8] mt-2">
-            {100 - progressToNextRank} points to next rank
-          </p>
-        </div>
-      </div>
 
-      {/* Quiz performance section */}
-      <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[15px] font-bold text-[#0f1535]">
-            Recent Quiz Attempts
-          </h2>
-
-          {quizAverage >= 85 && (
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-[#1b9e5a]">
-              <LuFlame size={14} />
-              Great Performance!
-            </span>
+          {leaderboardRank === 1 ? (
+            <p className="text-xs text-green-600 mt-2 font-semibold">
+              👑 You are leading the leaderboard!
+            </p>
+          ) : (
+            <p className="text-xs text-[#7b82a8] mt-2">
+              {pointsToNextRank} points to next rank
+            </p>
           )}
         </div>
-
-        {quizAttempts.length === 0 ? (
-          <p className="text-sm text-[#7b82a8]">
-            You haven’t taken any quizzes yet.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {quizAttempts
-              .sort(
-                (a: any, b: any) =>
-                  new Date(b.attempted_at).getTime() -
-                  new Date(a.attempted_at).getTime()
-              )
-              .slice(0, 5)
-              .map((q: any) => (
-                <li
-                  key={q.attempt_id}
-                  className="flex items-center justify-between text-sm border-b border-[#f0f1f7] pb-2"
-                >
-                  <span className="text-[#7b82a8]">
-                    {new Date(q.attempted_at).toLocaleDateString()}
-                  </span>
-                  <span
-                    className={`font-semibold ${
-                      q.score >= 85
-                        ? "text-[#1b9e5a]"
-                        : q.score >= 70
-                        ? "text-[#b7791f]"
-                        : "text-[#c0392b]"
-                    }`}
-                  >
-                    {q.score}%
-                  </span>
-                </li>
-              ))}
-          </ul>
-        )}
       </div>
 
+      {/* POINTS HISTORY */}
+      <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-6">
+        <div className="flex items-center gap-2 mb-4 text-[#3749a9]">
+          <LuHistory />
+          <h2 className="font-bold text-sm">Points History</h2>
+        </div>
+
+        {progress?.completed_lessons?.length > 0 ? (
+          <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+            {progress.completed_lessons.map((lesson: any) => (
+              <div
+                key={lesson.progress_id}
+                className="flex justify-between items-center bg-[#f9f9ff] p-3 rounded-xl"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {lesson.lesson?.title}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {lesson.progress_percentage}% completed
+                  </p>
+                </div>
+                <span className="text-sm font-bold text-[#3749a9]">
+                  +{Number(lesson.points || 0)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400">
+            No points earned yet.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -275,7 +297,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-[#e4e6f0] shadow-sm hover:shadow-lg transition-all duration-300">
+    <div className="bg-white rounded-2xl p-5 border border-[#e4e6f0] shadow-sm">
       <div className={`flex items-center gap-2 mb-2 ${color}`}>
         {icon}
         <p className="text-[12px] text-[#7b82a8]">{label}</p>

@@ -50,6 +50,12 @@ export default function StudentCourseDetailPage() {
   const [lessonProgress, setLessonProgress] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [localMilestone, setLocalMilestone] = useState(0);
+  // local milestone state
+  const [videoMilestone, setVideoMilestone] = useState(0);
+  const videoMilestoneRef = React.useRef(0);
+  const resumePercentRef = React.useRef(0);
 
   useEffect(() => {
   if (!lessonProgress) return;
@@ -79,20 +85,35 @@ export default function StudentCourseDetailPage() {
     const progressData = await progressRes.json();
     setProgress(progressData);
 
-    const completedIds =
-      progressData?.completed_lessons?.map((l: any) => l.lesson_id) || [];
+    const inProgressLesson =
+    lessonsData.find((lesson: any) => {
+        const existing = progressData?.completed_lessons?.find(
+        (l: any) => l.lesson_id === lesson.lesson_id
+        );
 
-    const firstUnfinished =
-      lessonsData.find(
-        (l: any) => !completedIds.includes(l.lesson_id)
-      ) || lessonsData[0];
+        return existing && existing.progress_percentage > 0 && !existing.completed;
+    });
 
-    setActiveLesson(firstUnfinished);
+    const notStartedLesson =
+    lessonsData.find((lesson: any) => {
+        const existing = progressData?.completed_lessons?.find(
+        (l: any) => l.lesson_id === lesson.lesson_id
+        );
+
+        return !existing || existing.progress_percentage === 0;
+    });
+
+    const selectedLesson =
+    inProgressLesson ||
+    notStartedLesson ||
+    lessonsData[0];
+
+    setActiveLesson(selectedLesson);
 
     const existingLessonProgress =
-      progressData?.completed_lessons?.find(
-        (l: any) => l.lesson_id === firstUnfinished.lesson_id
-      ) || null;
+    progressData?.completed_lessons?.find(
+      (l: any) => l.lesson_id === selectedLesson.lesson_id
+    ) || null;
 
     setLessonProgress(existingLessonProgress);
 
@@ -159,8 +180,14 @@ const saveReadingMilestone = async (percentage: number) => {
 
 const markLessonStarted = async () => {
   if (!activeLesson) return;
+  if (!progress) return;
 
-  if (lessonProgress && lessonProgress.progress_percentage > 0) return;
+  const existing = progress.completed_lessons?.find(
+    (l: any) => l.lesson_id === activeLesson.lesson_id
+  );
+
+  // If lesson already has progress, do not send another request (prevents overwriting progress_percentage with 1)
+  if (existing && existing.progress_percentage > 0) return;
 
   const token = localStorage.getItem("token");
 
@@ -183,8 +210,7 @@ const markLessonStarted = async () => {
 
   const updated = await res.json();
   setLessonProgress(updated);
-
-  toast.info("Lesson started! Keep going to earn points.");
+  setLocalMilestone(1);
 };
 
 useEffect(() => {
@@ -201,24 +227,46 @@ useEffect(() => {
 
   // formatting the backend reading 
 
-  useEffect(() => {
-    if (activeLesson?.content_type === "reading") {
-      const parts = activeLesson.content.split("⸻");
-      const formatted = parts.map((p: string) => {
+useEffect(() => {
+  if (!activeLesson || activeLesson.content_type !== "reading") return;
+
+    const parts = activeLesson.content.split("⸻");
+
+    const formatted = parts.map((p: string) => {
         const lines = p.trim().split("\n");
         return {
-          title: lines[0],
-          body: lines.slice(1).join("\n"),
+        title: lines[0],
+        body: lines.slice(1).join("\n"),
         };
-      });
-      setSections(formatted);
-      setCurrentSection(0);
-      setStartTime(Date.now());
-      setLessonCompleted(false);
-    }
-  }, [activeLesson]);
+    });
 
-  // fetching quiz details for a lesson if it exists
+    setSections(formatted);
+
+    const savedPercent = lessonProgress?.progress_percentage || 0;
+
+    setLocalMilestone(savedPercent);
+
+    // convert progress percentage into section index
+    if (formatted.length > 0 && savedPercent > 0) {
+        const resumeIndex = Math.floor(
+        (savedPercent / 100) * formatted.length
+        );
+
+        setCurrentSection(
+        resumeIndex >= formatted.length
+            ? formatted.length - 1
+            : resumeIndex
+        );
+    } else {
+        setCurrentSection(0);
+    }
+
+    setLessonCompleted(lessonProgress?.completed || false);
+
+    }, [activeLesson, lessonProgress]);
+
+  
+    // fetching quiz details for a lesson if it exists
 
   useEffect(() => {
   if (!activeLesson?.lesson_id) return;
@@ -255,27 +303,39 @@ useEffect(() => {
   fetchQuiz();
 }, [activeLesson]);
 
-
-
+useEffect(() => {
+  resumePercentRef.current =
+    lessonProgress?.progress_percentage ?? 0;
+}, [lessonProgress]);
 
 useEffect(() => {
+  if (!activeLesson || activeLesson.content_type !== "video") return;
+
+  const rewarded = lessonProgress?.last_rewarded_percentage ?? 0;
+
+videoMilestoneRef.current = rewarded;
+setVideoMilestone(rewarded);
+
+}, [activeLesson]);
+
+useEffect(() => {
+    if (lessonProgress?.completed) return;
   if (!activeLesson || activeLesson.content_type !== "video") return;
 
   let player: any;
   let interval: any;
 
-  let watchedSeconds = 0;
   let lastTime = 0;
-  let skipped = false;
+  let isResuming = true;
 
   const saveMilestone = async (percentage: number) => {
+    if (lessonProgress?.completed) return;
 
-  const lastRewarded =
-    lessonProgress?.last_rewarded_percentage ?? 0;
+  const lastRewarded = videoMilestoneRef.current;
 
   if (percentage <= lastRewarded) return;
   console.log("Trying milestone:", percentage);
-console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
+  console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
 
   const token = localStorage.getItem("token");
 
@@ -300,20 +360,38 @@ console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
 
   if (!updated) return;
 
+  videoMilestoneRef.current = updated.last_rewarded_percentage ?? percentage;
+  setVideoMilestone(percentage);
+
   setLessonProgress(updated);
+  setProgress((prev: any) => {
+  if (!prev) return prev;
+
+  const updatedLessons = prev.completed_lessons
+    ? prev.completed_lessons.map((l: any) =>
+        l.lesson_id === updated.lesson_id ? updated : l
+      )
+    : [updated];
+
+  return {
+    ...prev,
+    completed_lessons: updatedLessons,
+  };
+});
 
   const percent = Number(updated.progress_percentage || 0);
   const points = Number(updated.points || 0);
 
   if (points > 0) {
     toast.success(
-      `🎉 +${points} points! (${percent.toFixed(0)}% completed)`
+      `🎉 Awarded +${points} points! (${percent.toFixed(0)}% completed)`
     );
     confetti({ particleCount: 120, spread: 90 });
   }
 
   if (updated.completed) {
     setLessonCompleted(true);
+    if (interval) clearInterval(interval);
   }
 };
 
@@ -322,40 +400,56 @@ console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
       videoId: extractYouTubeId(activeLesson.content),
       events: {
         onReady: () => {
-            markLessonStarted();
-          interval = setInterval(async () => {
+            const savedPercent = resumePercentRef.current;
+            const duration = player.getDuration();
+
+            if (savedPercent > 0) {
+            const duration = player.getDuration();
+            const resumeTime = (savedPercent / 100) * duration;
+
+            player.seekTo(resumeTime, true);
+
+            // Set lastTime to resume position to avoid fake skip detection
+            lastTime = resumeTime;
+            }
+
+            interval = setInterval(() => {
             if (!player || !player.getDuration) return;
 
             const duration = player.getDuration();
             const current = player.getCurrentTime();
             if (!duration) return;
 
+            if (isResuming) {
+                isResuming = false;
+                lastTime = current;
+                return;
+            }
+
             const delta = current - lastTime;
 
+            // Skip detection
             if (delta > 5) {
-            skipped = true;
-            toast.error("⏩ Skipping ahead is not allowed!");
-            } else if (delta > 0 && delta <= 2) {
-            watchedSeconds += delta;
+                toast.error("⏩ Skipping ahead is not allowed!");
+                lastTime = current;
+                return;
             }
 
             lastTime = current;
 
-            const m1 = duration * 0.25;
-            const m2 = duration * 0.5;
-            const m3 = duration * 0.75;
-            const m4 = duration - 1;
+            const percentWatched = (current / duration) * 100;
 
-            console.log("Watched:", watchedSeconds, "Duration:", duration);
+            if (percentWatched >= 99) {
+                saveMilestone(100);
+            } else if (percentWatched >= 75) {
+                saveMilestone(75);
+            } else if (percentWatched >= 50) {
+                saveMilestone(50);
+            } else if (percentWatched >= 25) {
+                saveMilestone(25);
+            }
 
-            const percentWatched = (watchedSeconds / duration) * 100;
-
-            if (percentWatched >= 25) saveMilestone(25);
-            if (percentWatched >= 50) saveMilestone(50);
-            if (percentWatched >= 75) saveMilestone(75);
-            if (percentWatched >= 99) saveMilestone(100);
-
-          }, 1000);
+            }, 1000);
         },
       },
     });
@@ -377,7 +471,7 @@ console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
     if (interval) clearInterval(interval);
     if (player?.destroy) player.destroy();
   };
-}, [activeLesson]);
+}, [activeLesson, lessonProgress]);
   
 
   const markLessonComplete = async () => {
@@ -398,6 +492,20 @@ console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
         const updated = await res.json();
 
         setLessonProgress(updated);
+        setProgress((prev: any) => {
+            if (!prev) return prev;
+
+            const updatedLessons = prev.completed_lessons
+                ? prev.completed_lessons.map((l: any) =>
+                    l.lesson_id === updated.lesson_id ? updated : l
+                )
+                : [updated];
+
+            return {
+                ...prev,
+                completed_lessons: updatedLessons,
+            };
+            });
 
         if (!updated || typeof updated !== "object") return;
 
@@ -411,35 +519,51 @@ console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
         confetti({ particleCount: 120, spread: 80 });
 
         setLessonCompleted(true);
+
+        
   };
 
   // Reading lesson section navigation and milestone tracking
 
 const nextSection = async () => {
-  const total = sections.length;
+  if (isProcessing) return;
 
-  const nextIndex = currentSection + 1;
-  const percent = Math.floor((nextIndex / total) * 100);
+  setIsProcessing(true);
 
-  if (percent >= 25) await saveReadingMilestone(25);
-  if (percent >= 50) await saveReadingMilestone(50);
-  if (percent >= 75) await saveReadingMilestone(75);
+  try {
+    const total = sections.length;
+    const nextIndex = currentSection + 1;
 
-  if (currentSection === total - 1) {
-    const minutes =
-      (Date.now() - (startTime || 0)) / 60000;
-
-    if (minutes < 2) {
-      toast.error("⏳ Spend a little more time reading.");
-      return;
+    // Move section FIRST
+    if (currentSection < total - 1) {
+      setCurrentSection(nextIndex);
     }
 
-    await saveReadingMilestone(100);
-    return;
-  }
+    const percent = Math.floor((nextIndex / total) * 100);
 
-  setCurrentSection(prev => prev + 1);
+    // Determine next milestone based on localMilestone
+    let milestoneToSend = 0;
+
+    if (percent >= 100 && localMilestone < 100) {
+      milestoneToSend = 100;
+    } else if (percent >= 75 && localMilestone < 75) {
+      milestoneToSend = 75;
+    } else if (percent >= 50 && localMilestone < 50) {
+      milestoneToSend = 50;
+    } else if (percent >= 25 && localMilestone < 25) {
+      milestoneToSend = 25;
+    }
+
+    if (milestoneToSend > 0) {
+      await saveReadingMilestone(milestoneToSend);
+      setLocalMilestone(milestoneToSend);
+    }
+
+  } finally {
+    setIsProcessing(false);
+  }
 };
+
   if (loading)
     return (
       <div className="py-20 flex justify-center">
@@ -494,9 +618,18 @@ const nextSection = async () => {
           </div>
         </div>
 
-        <h2 className="text-xl font-bold mb-6">
-          {activeLesson.title}
+       <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold">
+            {activeLesson.title}
         </h2>
+
+        {lessonProgress?.progress_percentage > 0 &&
+            !lessonProgress?.completed && (
+            <span className="text-sm font-semibold text-[#3749a9] bg-[#eef1ff] px-3 py-1 rounded-full">
+                Continue
+            </span>
+        )}
+        </div>
         <div className="mb-4">
             {activeLesson.content_type === "video" ? (
                 <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-[#fef3c7] text-[#92400e]">
@@ -526,23 +659,33 @@ const nextSection = async () => {
 
             <div className="flex justify-between mt-6">
               <button
-                disabled={currentSection === 0}
-                onClick={() =>
-                  setCurrentSection(prev => prev - 1)
-                }
-                className="px-4 py-2 border rounded-xl"
-              >
+                disabled={currentSection === 0 || isProcessing}
+                onClick={() => {
+                    if (currentSection > 0) {
+                    setCurrentSection(prev => prev - 1);
+                    }
+                }}
+                className="px-4 py-2 border rounded-xl disabled:opacity-50"
+                >
                 Previous
-              </button>
+                </button>
 
               <button
                 onClick={nextSection}
-                className="px-6 py-2 bg-[#3749a9] text-white rounded-xl"
-              >
-                {currentSection === sections.length - 1
-                  ? "Finish Lesson"
-                  : "Next Section"}
-              </button>
+                disabled={isProcessing}
+                className="px-6 py-2 bg-[#3749a9] text-white rounded-xl flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                {isProcessing ? (
+                    <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                    </>
+                ) : currentSection === sections.length - 1 ? (
+                    "Finish Lesson"
+                ) : (
+                    "Next Section"
+                )}
+                </button>
             </div>
           </>
         )}
@@ -591,31 +734,32 @@ const nextSection = async () => {
                     {/* Status tag to show progress */}
                     <div className="absolute top-3 right-3">
                     {(() => {
-                        const lessonProgressValue =
-                        progressMap.get(lesson.lesson_id) ?? 0;
+                        const lessonData = progress?.completed_lessons?.find(
+                            (l: any) => l.lesson_id === lesson.lesson_id
+                        );
 
-                        if (lessonProgressValue === 100) {
-                        return (
+                        if (lessonData?.completed) {
+                            return (
                             <span className="px-3 py-1 text-xs rounded-full bg-[#1b9e5a] text-white font-semibold">
-                            Completed
+                                Completed
                             </span>
-                        );
+                            );
                         }
 
-                        if (lessonProgressValue > 0) {
-                        return (
+                        if (lessonData?.progress_percentage > 0) {
+                            return (
                             <span className="px-3 py-1 text-xs rounded-full bg-[#f59e0b] text-white font-semibold">
-                            In Progress
+                                In Progress
                             </span>
-                        );
+                            );
                         }
 
                         return (
-                        <span className="px-3 py-1 text-xs rounded-full bg-[#e5e7eb] text-[#374151] font-semibold">
+                            <span className="px-3 py-1 text-xs rounded-full bg-[#e5e7eb] text-[#374151] font-semibold">
                             Not Started
-                        </span>
+                            </span>
                         );
-                    })()}
+                        })()}
                     </div>
                 </div>
 

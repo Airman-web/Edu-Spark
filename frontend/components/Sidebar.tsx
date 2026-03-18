@@ -90,7 +90,7 @@ const adminMain: NavItem[] = [
     id: "leaderboard",
     label: "Leaderboard",
     icon: LuTrophy,
-    path: `${adminRoute}/leaderboard`,
+    path: `/leaderboard`,
   },
 ];
 
@@ -126,7 +126,7 @@ const guardianMain: NavItem[] = [
     id: "leaderboard",
     label: "Leaderboard",
     icon: LuTrophy,
-    path: `${guardianRoute}/leaderboard`,
+    path: `/leaderboard`,
   },
 ];
 
@@ -155,7 +155,7 @@ const studentMain: NavItem[] = [
     id: "leaderboard",
     label: "Leaderboard",
     icon: LuTrophy,
-    path: `${studentRoute}/leaderboard`,
+    path: `/leaderboard`,
   },
   {
     id: "profile",
