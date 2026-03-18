@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import {
   LuBookOpen,
   LuSearch,
@@ -13,145 +13,13 @@ import {
   LuX,
 } from "react-icons/lu";
 
-//  Mock data
-const courses = [
-  {
-    id: 1,
-    title: "Mathematics – Grade 9",
-    subject: "Mathematics",
-    progress: 72,
-    lessons: 18,
-    totalLessons: 25,
-    color: "#3749a9",
-    instructor: "Mr. Kamanzi",
-    description: "Algebra, quadratic equations, geometry proofs, and number theory fundamentals.",
-    nextLesson: "Lesson 19: Trigonometry Basics",
-    quizzes: 5,
-    assignments: 3,
-    lastActivity: "2 hours ago",
-    duration: "12h 30m",
-  },
-  {
-    id: 2,
-    title: "English Literature",
-    subject: "English",
-    progress: 55,
-    lessons: 11,
-    totalLessons: 20,
-    color: "#5b2d8a",
-    instructor: "Ms. Uwimana",
-    description: "Classic and contemporary texts, essay writing, and literary analysis techniques.",
-    nextLesson: "Lesson 12: Macbeth – Act III",
-    quizzes: 4,
-    assignments: 4,
-    lastActivity: "Yesterday",
-    duration: "8h 45m",
-  },
-  {
-    id: 3,
-    title: "Physics – Grade 9",
-    subject: "Physics",
-    progress: 40,
-    lessons: 8,
-    totalLessons: 20,
-    color: "#131b46",
-    instructor: "Mr. Nsengimana",
-    description: "Mechanics, waves, electricity, and introductory quantum concepts.",
-    nextLesson: "Lesson 9: Thermodynamics",
-    quizzes: 3,
-    assignments: 2,
-    lastActivity: "3 days ago",
-    duration: "9h 20m",
-  },
-  {
-    id: 4,
-    title: "Biology",
-    subject: "Biology",
-    progress: 88,
-    lessons: 22,
-    totalLessons: 25,
-    color: "#1b9e5a",
-    instructor: "Ms. Mutesi",
-    description: "Cell biology, genetics, ecosystems, and human body systems.",
-    nextLesson: "Lesson 23: DNA Replication",
-    quizzes: 6,
-    assignments: 3,
-    lastActivity: "1 hour ago",
-    duration: "14h 10m",
-  },
-  {
-    id: 5,
-    title: "Chemistry",
-    subject: "Chemistry",
-    progress: 20,
-    lessons: 4,
-    totalLessons: 20,
-    color: "#c05621",
-    instructor: "Mr. Habimana",
-    description: "Atomic structure, periodic table, chemical bonding, and reactions.",
-    nextLesson: "Lesson 5: Chemical Equations",
-    quizzes: 2,
-    assignments: 1,
-    lastActivity: "5 days ago",
-    duration: "10h 00m",
-  },
-  {
-    id: 6,
-    title: "Geography",
-    subject: "Geography",
-    progress: 60,
-    lessons: 12,
-    totalLessons: 20,
-    color: "#1b6e9e",
-    instructor: "Ms. Ingabire",
-    description: "Physical geography, climate, maps, and human settlement patterns.",
-    nextLesson: "Lesson 13: Plate Tectonics",
-    quizzes: 4,
-    assignments: 2,
-    lastActivity: "Yesterday",
-    duration: "11h 15m",
-  },
-  {
-    id: 7,
-    title: "History – Grade 9",
-    subject: "History",
-    progress: 35,
-    lessons: 7,
-    totalLessons: 20,
-    color: "#7b3a1e",
-    instructor: "Mr. Bizimana",
-    description: "Rwandan history, African civilisations, colonial era, and post-independence.",
-    nextLesson: "Lesson 8: Independence Movements",
-    quizzes: 3,
-    assignments: 2,
-    lastActivity: "4 days ago",
-    duration: "9h 50m",
-  },
-  {
-    id: 8,
-    title: "Computer Science",
-    subject: "Computer Science",
-    progress: 10,
-    lessons: 2,
-    totalLessons: 20,
-    color: "#0e7490",
-    instructor: "Ms. Niyonzima",
-    description: "Introduction to programming, algorithms, data structures, and web basics.",
-    nextLesson: "Lesson 3: Variables & Data Types",
-    quizzes: 1,
-    assignments: 1,
-    lastActivity: "1 week ago",
-    duration: "10h 30m",
-  },
-];
 
-const subjects = ["All", ...Array.from(new Set(courses.map((c) => c.subject)))];
 
 const FILTER_OPTIONS = [
   { label: "All courses", value: "all" },
   { label: "In progress", value: "inprogress" },
-  { label: "Almost done (>70%)", value: "nearlydone" },
   { label: "Just started (<30%)", value: "new" },
+  { label: "Almost done (>70%)", value: "nearlydone" },
   { label: "Completed", value: "completed" },
 ];
 
@@ -161,6 +29,10 @@ export default function StudentCoursesPage() {
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("All");
   const [filter, setFilter] = useState("all");
+
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const subjects = ["All", ...Array.from(new Set(courses.map((c) => c.subject)))];
 
   const filtered = courses.filter((c) => {
     const matchSearch =
@@ -176,6 +48,84 @@ export default function StudentCoursesPage() {
       (filter === "completed" && c.progress === 100);
     return matchSearch && matchSubject && matchFilter;
   });
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const studentId = user?.sub || user?.id;
+
+        if (!token || !studentId) return;
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/courses/student/${studentId}/enrollments`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error("Failed to fetch enrollments:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("Enrollments from DB:", data);
+
+        // backend response formatting to all information
+        const formatted = data.map((enrollment: any) => {
+          const course = enrollment.course;
+
+          // duration calculation based on number of lessons (assuming average 20 mins per lesson)
+          const lessonDuration = 60;
+          const totalDurationMinutes = course.total_lessons * lessonDuration;
+
+          const hours = Math.floor(totalDurationMinutes / 60);
+          const minutes = totalDurationMinutes % 60;
+
+          return {
+            id: course.course_id,
+            title: course.title,
+            subject: course.grade_group?.name || "General",
+            progress: course.progress_percentage,
+            lessons: course.completed_lessons,
+            totalLessons: course.total_lessons,
+            color: "#3749a9", 
+            instructor: "Instructor", 
+            description: course.description,
+            nextLesson:
+              course.completed_lessons < course.total_lessons
+                ? `Lesson ${course.completed_lessons + 1}`
+                : "Course completed",
+            quizzes: course.quiz_attempts_count,
+            assignments: 0,
+            lastActivity: new Date(course.last_activity).toLocaleDateString(),
+            duration: `${hours}h ${minutes}m`,
+          };
+        });
+
+        setCourses(formatted);
+
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loadingCourses) {
+    return (
+      <div className="py-20 flex justify-center">
+        <div className="w-10 h-10 border-4 border-[#3749a9] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
