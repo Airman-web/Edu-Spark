@@ -15,6 +15,16 @@ export class ProgressService {
 
   async updateLessonProgress(studentId: string, dto: UpdateLessonProgressDto) {
     const { lesson_id, progress_percentage } = dto;
+
+    // Check if student exists
+    const student = await (this.prisma.student as any).findUnique({
+      where: { student_id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student profile not found');
+    }
+
     const completed = progress_percentage >= 100;
 
     // Check if progress already exists
@@ -96,6 +106,15 @@ export class ProgressService {
   }
 
   async recordQuizAttempt(studentId: string, dto: RecordQuizAttemptDto) {
+    // Check if student exists
+    const student = await (this.prisma.student as any).findUnique({
+      where: { student_id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student profile not found');
+    }
+
     const attempt = await (this.prisma.studentQuizAttempt as any).create({
       data: {
         student_id: studentId,
@@ -116,6 +135,15 @@ export class ProgressService {
   }
 
   async getStudentProgress(studentId: string) {
+    // Check if student exists
+    const student = await (this.prisma.student as any).findUnique({
+      where: { student_id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student profile not found');
+    }
+
     const [lessonProgress, quizAttempts, totalPoints] = await Promise.all([
       (this.prisma.studentLessonProgress as any).findMany({
         where: { student_id: studentId },

@@ -26,6 +26,9 @@ describe('ProgressService Incremental Progress', () => {
     lesson: {
       findUnique: jest.fn(),
     },
+    student: {
+      findUnique: jest.fn(),
+    },
   };
 
   const mockPointsService = {
@@ -55,6 +58,7 @@ describe('ProgressService Incremental Progress', () => {
 
     mockPrisma.studentLessonProgress.findUnique.mockResolvedValue(null);
     mockPrisma.lesson.findUnique.mockResolvedValue(mockLesson);
+    mockPrisma.student.findUnique.mockResolvedValue({ student_id: mockStudentId });
     mockPrisma.studentLessonProgress.create.mockResolvedValue({ progress_id: 'p1' });
 
     await service.updateLessonProgress(mockStudentId, dto);
@@ -92,6 +96,7 @@ describe('ProgressService Incremental Progress', () => {
     };
 
     mockPrisma.studentLessonProgress.findUnique.mockResolvedValue(existingProgress);
+    mockPrisma.student.findUnique.mockResolvedValue({ student_id: mockStudentId });
     mockPrisma.studentLessonProgress.update.mockResolvedValue({ progress_id: 'p1' });
 
     await service.updateLessonProgress(mockStudentId, dto);
@@ -119,6 +124,7 @@ describe('ProgressService Incremental Progress', () => {
     };
 
     mockPrisma.studentLessonProgress.findUnique.mockResolvedValue(existingProgress);
+    mockPrisma.student.findUnique.mockResolvedValue({ student_id: mockStudentId });
     mockPrisma.studentLessonProgress.update.mockResolvedValue({ progress_id: 'p1' });
 
     await service.updateLessonProgress(mockStudentId, dto);
@@ -130,6 +136,7 @@ describe('ProgressService Incremental Progress', () => {
       // First 50%
       mockPrisma.studentLessonProgress.findUnique.mockResolvedValue(null);
       mockPrisma.lesson.findUnique.mockResolvedValue(mockLesson);
+      mockPrisma.student.findUnique.mockResolvedValue({ student_id: mockStudentId });
       await service.updateLessonProgress(mockStudentId, { lesson_id: mockLessonId, progress_percentage: 50 });
       expect(pointsService.addPoints).toHaveBeenCalledWith(mockStudentId, 50, expect.any(String));
 
@@ -143,6 +150,8 @@ describe('ProgressService Incremental Progress', () => {
         completed: false
       };
       mockPrisma.studentLessonProgress.findUnique.mockResolvedValue(existing);
+      mockPrisma.lesson.findUnique.mockResolvedValue(mockLesson); // Inserted line
+      mockPrisma.student.findUnique.mockResolvedValue({ student_id: mockStudentId });
       await service.updateLessonProgress(mockStudentId, { lesson_id: mockLessonId, progress_percentage: 100 });
       expect(pointsService.addPoints).toHaveBeenCalledWith(mockStudentId, 50, expect.any(String));
   });
