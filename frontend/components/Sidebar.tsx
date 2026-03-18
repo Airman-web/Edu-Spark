@@ -146,6 +146,12 @@ const studentMain: NavItem[] = [
     path: `${studentRoute}/courses`,
   },
   {
+    id: "student-courses",
+    label: "Other Courses",
+    icon: LuBook,
+    path: `../courses`,
+  },
+  {
     id: "leaderboard",
     label: "Leaderboard",
     icon: LuTrophy,
