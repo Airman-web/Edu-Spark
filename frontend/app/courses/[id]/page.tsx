@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/footer";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { toast } from "sonner";
 import {
   faCalculator,
   faBookOpen,
@@ -144,38 +145,55 @@ export default function CourseDetailPage() {
   );
 
   const enrollCourse = async (studentId?: string) => {
-    try {
-      setEnrolling(true);
+  try {
+    setEnrolling(true);
 
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/courses/${courseId}/enroll`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: studentId ? JSON.stringify({ student_id: studentId }) : undefined,
-        }
-      );
-
-      if (res.status === 409) {
-        alert("Already enrolled in this course.");
-        return;
-      }
-
-      if (!res.ok) throw new Error();
-
-      alert("Enrollment successful 🎉");
-      setShowGuardianModal(false);
-    } catch {
-      alert("Failed to enroll.");
-    } finally {
-      setEnrolling(false);
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      window.location.href = "/login";
+      return;
     }
-  };
+
+    const user = JSON.parse(storedUser);
+
+    let endpoint = "";
+
+    if (user.role === "student") {
+      endpoint = `${process.env.NEXT_PUBLIC_API_URL}/courses/${courseId}/enroll`;
+    }
+
+    if (user.role === "guardian" && studentId) {
+      endpoint = `${process.env.NEXT_PUBLIC_API_URL}/courses/${courseId}/enroll/student/${studentId}`;
+    }
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.status === 409) {
+      toast.error("This student is already enrolled in this course.");
+      return;
+    }
+
+    if (!res.ok) {
+      throw new Error();
+    }
+
+    toast.success("Student enrolled successfully.");
+
+    setShowGuardianModal(false);
+    setSelectedChildId("");
+
+  } catch (error) {
+    toast.error("Failed to enroll student in course. An error occured!");
+  } finally {
+    setEnrolling(false);
+  }
+};
 
   const fetchGuardianChildren = async () => {
     try {
