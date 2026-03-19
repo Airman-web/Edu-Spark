@@ -17,10 +17,10 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 
 @ApiTags('courses')
-@ApiBearerAuth()
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
@@ -36,22 +36,21 @@ export class CoursesController {
     return this.coursesService.create(createCourseDto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Get all courses, optionally filtered by grade group',
+    summary: 'Get all courses, optionally filtered by grade group (public)',
   })
   @ApiResponse({
     status: 200,
     description: 'Return list of courses.',
     type: [CourseResponseDto],
   })
-  findAll(@Request() req, @Query('gradeGroupId') gradeGroupId?: string) {
+  findAll(@Query('gradeGroupId') gradeGroupId?: string) {
     return (this.coursesService as any).findAll(gradeGroupId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get details of a specific course' })
+  @ApiOperation({ summary: 'Get details of a specific course (public)' })
   @ApiResponse({
     status: 200,
     description: 'Return course details.',
@@ -59,5 +58,50 @@ export class CoursesController {
   })
   findOne(@Param('id') id: string) {
     return (this.coursesService as any).findOne(id);
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':id/enroll')
+  @ApiOperation({ summary: 'Enroll a student in a course (requires login)' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  @ApiResponse({ status: 201, description: 'Student enrolled successfully.' })
+  @ApiResponse({ status: 409, description: 'Already enrolled in this course.' })
+  @ApiResponse({ status: 404, description: 'Course not found.' })
+  enroll(
+    @Param('id') courseId: string,
+    @Request() req,
+  ) {
+    return this.coursesService.enroll(courseId, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':id/enroll/student/:studentId')
+  @ApiOperation({ summary: 'Enroll a specific student in a course (requires guardian login)' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  @ApiParam({ name: 'studentId', description: 'Student ID' })
+  @ApiResponse({ status: 201, description: 'Student enrolled successfully.' })
+  @ApiResponse({ status: 409, description: 'Student is already enrolled in this course.' })
+  @ApiResponse({ status: 404, description: 'Course or Student not found.' })
+  enrollStudent(
+    @Param('id') courseId: string,
+    @Param('studentId') studentId: string,
+  ) {
+    return this.coursesService.enroll(courseId, studentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('student/:studentId/enrollments')
+  @ApiOperation({ summary: 'Get all courses a student is enrolled in (requires login)' })
+  @ApiParam({ name: 'studentId', description: 'Student ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of enrollments with course details.',
+  })
+  getStudentEnrollments(@Param('studentId') studentId: string) {
+    return this.coursesService.getStudentEnrollments(studentId);
   }
 }

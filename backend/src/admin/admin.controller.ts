@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,14 +11,19 @@ import {
   ApiUnauthorizedResponse,
   ApiConflictResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import {
   DashboardStatsDto,
   AdminStudentResponseDto,
   AdminGuardianResponseDto,
   AdminCourseResponseDto,
+  AdminLessonResponseDto,
 } from './dto/admin-response.dto';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { AdminCreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { AdminCreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 import {
   RegisterGuardianDto,
   RegisterStudentDto,
@@ -95,8 +100,34 @@ export class AdminController {
     description: 'Course with this title already exists for the grade group',
   })
   @ApiNotFoundResponse({ description: 'Grade group not found' })
-  createCourse(@Body() createCourseDto: CreateCourseDto) {
+  createCourse(@Body() createCourseDto: AdminCreateCourseDto) {
     return this.adminService.createCourse(createCourseDto);
+  }
+
+  @Patch('course/:id')
+  @ApiOperation({ summary: 'Update an existing course' })
+  @ApiOkResponse({
+    description: 'Course updated successfully',
+    type: AdminCourseResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Course not found' })
+  @ApiConflictResponse({
+    description: 'Course with this title already exists for the grade group',
+  })
+  updateCourse(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
+    return this.adminService.updateCourse(id, updateCourseDto);
+  }
+
+  @Delete('course/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a course' })
+  @ApiOkResponse({ description: 'Course deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Course not found' })
+  deleteCourse(@Param('id') id: string) {
+    return this.adminService.deleteCourse(id);
   }
 
   @Post('register-guardian')
@@ -107,6 +138,15 @@ export class AdminController {
     return this.adminService.registerGuardian(registerGuardianDto);
   }
 
+  @Delete('guardian/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a guardian' })
+  @ApiOkResponse({ description: 'Guardian deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Guardian not found' })
+  deleteGuardian(@Param('id') id: string) {
+    return this.adminService.deleteGuardian(id);
+  }
+
   @Post('register-student')
   @ApiOperation({ summary: 'Register a new student' })
   @ApiOkResponse({ description: 'Student registered successfully' })
@@ -114,5 +154,76 @@ export class AdminController {
   @ApiNotFoundResponse({ description: 'Guardian or Grade Group not found' })
   registerStudent(@Body() registerStudentDto: RegisterStudentDto) {
     return this.adminService.registerStudent(registerStudentDto);
+  }
+
+  @Post('lesson')
+  @ApiOperation({ summary: 'Create a new lesson' })
+  @ApiOkResponse({
+    description: 'Lesson created successfully',
+    type: AdminLessonResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Lesson with this title already exists for the course',
+  })
+  @ApiNotFoundResponse({ description: 'Course not found' })
+  createLesson(@Body() createLessonDto: AdminCreateLessonDto) {
+    return this.adminService.createLesson(createLessonDto);
+  }
+
+  @Patch('lesson/:id')
+  @ApiOperation({ summary: 'Update an existing lesson' })
+  @ApiOkResponse({
+    description: 'Lesson updated successfully',
+    type: AdminLessonResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Lesson or Course not found' })
+  @ApiConflictResponse({
+    description: 'Lesson with this title already exists for the course',
+  })
+  updateLesson(
+    @Param('id') id: string,
+    @Body() updateLessonDto: UpdateLessonDto,
+  ) {
+    return this.adminService.updateLesson(id, updateLessonDto);
+  }
+
+  @Delete('lesson/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a lesson' })
+  @ApiOkResponse({ description: 'Lesson deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Lesson not found' })
+  deleteLesson(@Param('id') id: string) {
+    return this.adminService.deleteLesson(id);
+  }
+
+  @Get('lesson')
+  @ApiOperation({ summary: 'Get all lessons' })
+  @ApiOkResponse({
+    description: 'List of all lessons retrieved successfully',
+    type: [AdminLessonResponseDto],
+  })
+  getAllLessons() {
+    return this.adminService.getAllLessons();
+  }
+
+  @Get('lesson/:id')
+  @ApiOperation({ summary: 'Get details of a specific lesson' })
+  @ApiOkResponse({
+    description: 'Lesson details retrieved successfully',
+    type: AdminLessonResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Lesson not found' })
+  getLessonById(@Param('id') id: string) {
+    return this.adminService.getLessonById(id);
+  }
+
+  @Get('lessons/course/:courseId')
+  @ApiOperation({ summary: 'Get lessons for a specific course' })
+  @ApiOkResponse({
+    description: 'List of lessons for the course retrieved successfully',
+    type: [AdminLessonResponseDto],
+  })
+  getLessonsByCourse(@Param('courseId') courseId: string) {
+    return this.adminService.getLessonsByCourse(courseId);
   }
 }

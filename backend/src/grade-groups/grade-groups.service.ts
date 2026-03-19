@@ -6,7 +6,13 @@ export class GradeGroupsService {
   constructor(private prisma: PrismaService) {}
 
   findAll() {
-    return (this.prisma.gradeGroup as any).findMany();
+    return (this.prisma.gradeGroup as any).findMany({
+      include: {
+        _count: {
+          select: { students: true },
+        },
+      },
+    });
   }
 
   findOne(id: string) {
@@ -21,7 +27,19 @@ export class GradeGroupsService {
     });
   }
 
-  // Initial seed helper or admin endpoint
+  update(id: string, updateGradeGroupDto: any) {
+    return (this.prisma.gradeGroup as any).update({
+      where: { grade_group_id: id },
+      data: updateGradeGroupDto,
+    });
+  }
+
+  remove(id: string) {
+    return (this.prisma.gradeGroup as any).delete({
+      where: { grade_group_id: id },
+    });
+  }
+
   async createInitialGroups() {
     const groups = [
       { name: 'P1', description: 'Primary 1' },

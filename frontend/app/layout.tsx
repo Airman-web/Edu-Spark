@@ -3,6 +3,7 @@ import { Poppins, Geist } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,9 +41,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body className={poppins.className}>
-        {children}
-        <Toaster richColors position="top-right" />
+      <body className={poppins.className} suppressHydrationWarning>
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

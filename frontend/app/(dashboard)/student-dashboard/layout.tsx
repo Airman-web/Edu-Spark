@@ -11,6 +11,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [autoCollapsed, setAutoCollapsed] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (!token || role !== "student") {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    
     const handleResize = () => {
       const width = window.innerWidth;
       const mobile = width < 768;
@@ -41,7 +49,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const sidebarWidth = isCollapsed ? 68 : 210;
 
   return (
-    <div className="flex min-h-screen bg-[#f7f8fc]">
+    <div className="flex min-h-screen bg-[#f7f8fc] dark:bg-[#0b0f24]">
       <Sidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
@@ -58,7 +66,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       >
         <Header onMenuClick={handleDrawerToggle} sidebarWidth={isMobile ? 0 : sidebarWidth} />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pt-[68px] bg-[#f7f8fc]">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pt-[68px] bg-[#f7f8fc] dark:bg-[#0b0f24]">
           {children}
         </main>
       </div>

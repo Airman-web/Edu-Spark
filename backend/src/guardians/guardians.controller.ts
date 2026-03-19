@@ -2,12 +2,16 @@ import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GuardiansService } from './guardians.service';
+import { CoursesService } from '../courses/courses.service';
 
 @ApiTags('guardians')
 @ApiBearerAuth()
 @Controller('guardians')
 export class GuardiansController {
-  constructor(private readonly guardiansService: GuardiansService) {}
+  constructor(
+    private readonly guardiansService: GuardiansService,
+    private readonly coursesService: CoursesService,
+  ) {}
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -16,5 +20,14 @@ export class GuardiansController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getProfile(@Request() req) {
     return this.guardiansService.findOne(req.user.sub);
+  }
+
+  @Get('students/performance')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get performance of all students under the current guardian' })
+  @ApiOkResponse({ description: 'Student performance retrieved successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getStudentPerformance(@Request() req) {
+    return this.guardiansService.getStudentPerformance(req.user.sub);
   }
 }

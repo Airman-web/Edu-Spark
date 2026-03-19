@@ -2,8 +2,10 @@ import {
   Injectable,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -94,5 +96,64 @@ export class StudentsService {
     }
 
     return student;
+  }
+
+  async updateForGuardian(
+    studentId: string,
+    guardianId: string,
+    updateStudentDto: UpdateStudentDto,
+  ) {
+    const student = await (this.prisma.student as any).findUnique({
+      where: { student_id: studentId },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    if (student.guardian_id !== guardianId) {
+      throw new ForbiddenException(
+        'You do not have access to update this student profile',
+      );
+    }
+
+    if (
+      updateStudentDto.display_name &&
+      updateStudentDto.display_name !== student.display_name
+    ) {
+      const existing = await (this.prisma.student as any).findFirst({
+        where: { display_name: updateStudentDto.display_name },
+      });
+      if (existing) {
+        throw new ConflictException('Display Name already taken');
+      }
+    }
+
+    if (updateStudentDto.grade_group_id) {
+      const gradeGroup = await (this.prisma.gradeGroup as any).findUnique({
+        where: { grade_group_id: updateStudentDto.grade_group_id },
+      });
+      if (!gradeGroup) {
+        throw new NotFoundException('Grade Group not found');
+      }
+    }
+
+    const updateData: any = { ...updateStudentDto };
+
+    if (updateStudentDto.password) {
+      updateData.password = await bcrypt.hash(updateStudentDto.password, 10);
+    }
+
+    if (updateStudentDto.date_of_birth) {
+      updateData.date_of_birth = new Date(updateStudentDto.date_of_birth);
+    }
+
+    return await (this.prisma.student as any).update({
+      where: { student_id: studentId },
+      data: updateData,
+      include: {
+        grade_group: true,
+      },
+    });
   }
 }

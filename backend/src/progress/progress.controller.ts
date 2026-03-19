@@ -17,6 +17,8 @@ import {
   StudentProgressSummaryDto,
 } from './dto/progress-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -27,7 +29,8 @@ import {
 @ApiTags('progress')
 @ApiBearerAuth()
 @Controller('progress')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('student')
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
@@ -39,7 +42,7 @@ export class ProgressController {
     type: LessonProgressResponseDto,
   })
   updateLesson(@Request() req, @Body() dto: UpdateLessonProgressDto) {
-    const studentId = req.user.student_id;
+    const studentId = req.user.sub;
     return this.progressService.updateLessonProgress(studentId, dto);
   }
 
@@ -51,7 +54,7 @@ export class ProgressController {
     type: QuizAttemptResponseDto,
   })
   recordQuiz(@Request() req, @Body() dto: RecordQuizAttemptDto) {
-    const studentId = req.user.student_id;
+    const studentId = req.user.sub;
     return this.progressService.recordQuizAttempt(studentId, dto);
   }
 
@@ -65,7 +68,7 @@ export class ProgressController {
     type: StudentProgressSummaryDto,
   })
   getProgress(@Request() req) {
-    const studentId = req.user.student_id;
+    const studentId = req.user.sub;
     return this.progressService.getStudentProgress(studentId);
   }
 }

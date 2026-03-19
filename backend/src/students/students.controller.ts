@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   UseGuards,
   Request,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
 import { StudentResponseDto } from './dto/student-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
@@ -58,5 +60,24 @@ export class StudentsController {
   })
   findOne(@Request() req, @Param('id') id: string) {
     return (this.studentsService as any).findOneForGuardian(id, req.user.sub);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Guardian updates a student profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Student profile updated.',
+    type: StudentResponseDto,
+  })
+  update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateStudentDto: UpdateStudentDto,
+  ) {
+    return (this.studentsService as any).updateForGuardian(
+      id,
+      req.user.sub,
+      updateStudentDto,
+    );
   }
 }

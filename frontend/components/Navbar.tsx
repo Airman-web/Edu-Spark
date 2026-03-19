@@ -8,30 +8,68 @@ const navLinks = [
   { label: "Home",         href: "/" },
   { label: "About",        href: "/about" },
   { label: "Features",     href: "/#features" },
-  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Explore Courses", href: "/courses" },
 ];
 
 export default function Navbar() {
   const [scrolled,  setScrolled]  = useState(false);
   const [menuOpen,  setMenuOpen]  = useState(false);
 
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll);
+    
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const getDashboardLink = () => {
+    if (!user) return "/";
+
+    switch (user.role) {
+      case "admin":
+        return "/admin-dashboard";
+      case "guardian":
+        return "/guardian-dashboard";
+      case "student":
+        return "/student-dashboard";
+      default:
+        return "/";
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    window.location.reload();
+  };
+
 
   return (
     <nav
       style={{
-        position:   "fixed",
-        top: 0, left: 0, right: 0,
-        zIndex:     50,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
         transition: "all 0.3s ease",
-        background: scrolled ? "rgba(255,255,255,0.95)" : "rgba(0,0,0,0.15)",
+        background: scrolled
+          ? "rgba(255,255,255,0.95)"
+          : "rgba(0,0,0,0.15)",
         backdropFilter: "blur(12px)",
-        borderBottom: scrolled ? "1px solid #eef0fa" : "1px solid rgba(255,255,255,0.12)",
-        boxShadow: scrolled ? "0 2px 20px rgba(55,73,169,0.08)" : "none",
+        borderBottom: scrolled
+          ? "1px solid #eef0fa"
+          : "1px solid rgba(255,255,255,0.12)",
+        boxShadow: scrolled
+          ? "0 2px 20px rgba(55,73,169,0.08)"
+          : "none",
       }}
     >
       <div
@@ -45,7 +83,7 @@ export default function Navbar() {
           margin:         "0 auto",
         }}
       >
-        {/* ── Logo ── */}
+        {/* Logo */}
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
           <Image
             src="/images/logo-nobg.png"
@@ -67,7 +105,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* ── Desktop Links ── */}
+        {/*  Desktop Links  */}
         <div style={{ display: "flex", alignItems: "center", gap: "36px" }}
              className="hidden-mobile">
           {navLinks.map((link) => (
@@ -90,9 +128,11 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* ── CTA Buttons ── */}
+        {/*  CTA Buttons  */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}
              className="hidden-mobile">
+          {!user ? (
+            <>
           <Link href="/login"
             style={{
               padding: "10px 24px",
@@ -111,13 +151,52 @@ export default function Navbar() {
             }}>
             Log In
           </Link>
+          
           <Link href="/register" className="btn-primary"
             style={{ padding: "10px 24px", fontSize: "0.875rem" }}>
             Get Started
           </Link>
+          </>
+
+           ) : (
+              <>
+              <Link
+                href={getDashboardLink()}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "50px",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  color: scrolled ? "#3749a9" : "#ffffff",
+                  border: scrolled
+                    ? "2px solid #3749a9"
+                    : "2px solid rgba(255,255,255,0.7)",
+                }}
+              >
+                Dashboard
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "50px",
+                  fontWeight: 700,
+                  background: "#3749a9",
+                  color:"#ffffff",
+                  border: scrolled
+                    ? "2px solid #3749a9"
+                    : "2px solid rgba(255,255,255,0.7)",
+                  cursor: "pointer",
+                }}
+              >
+                Logout
+              </button>
+            </>
+          )}
         </div>
 
-        {/* ── Mobile Hamburger ── */}
+        {/*  Mobile Hamburger  */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
@@ -169,7 +248,7 @@ export default function Navbar() {
                 fontFamily: "'Nunito', sans-serif",
                 fontWeight: 700,
                 fontSize:   "0.95rem",
-                color:      "#3d4566",
+                color:      scrolled ? "#3d4566" : "#ffffff",
                 textDecoration: "none",
               }}
             >
@@ -177,8 +256,34 @@ export default function Navbar() {
             </Link>
           ))}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "8px" }}>
-            <Link href="/login"    className="btn-outline"   style={{ textAlign: "center" }}>Log In</Link>
-            <Link href="/register" className="btn-primary"   style={{ textAlign: "center" }}>Get Started</Link>
+            {!user ? (
+              <>
+                <Link href="/login" className="btn-outline" style={{ textAlign: "center" }}>
+                  Log In
+                </Link>
+                <Link href="/register" className="btn-primary" style={{ textAlign: "center" }}>
+                  Get Started
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={getDashboardLink()}
+                  className="btn-outline"
+                  style={{ textAlign: "center" }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="btn-primary"
+                  style={{ textAlign: "center" }}
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
+import { useEffect } from "react";
 import {
   LuBookOpen,
   LuFileText,
@@ -12,6 +14,7 @@ import {
   LuCopy,
   LuPencil,
   LuTrash2,
+  LuUsers,
 } from "react-icons/lu";
 import StatsCard from "@/components/StatsCard";
 import {
@@ -37,63 +40,260 @@ import {
   AddEditCourseModal,
   DeleteCourseModal,
 } from "@/components/modals/CourseModals";
+import EmptyTableState from "@/components/common/EmptyTableState";
 
-const stats = [
-  { label: "Total Courses", value: 18, icon: LuBookOpen, color: "#3749a9" },
-  { label: "Total Lessons", value: 142, icon: LuFileText, color: "#131b46" },
-  { label: "Active Courses", value: 15, icon: LuActivity, color: "#1b9e5a" },
-  { label: "Grade Groups", value: 3, icon: LuLayers, color: "#5b2d8a" },
-];
+type BackendCourse = {
+  course_id: string;
+  title: string;
+  description: string;
+  grade_group: {
+    grade_group_id: string;
+    name: string;
+    description: string;
+  };
+  _count: {
+    lessons: number;
+  };
+  created_at: string;
+};
 
-const sampleCourses: Course[] = [
-  {
-    course_id: "c1a2b3c4",
-    title: "Mathematics 101",
-    description: "Basic arithmetic and number concepts",
-    grade_group: "P1",
-    lessons_count: 12,
-    created_at: "2026-01-10",
-  },
-  {
-    course_id: "c2d3e4f5",
-    title: "English Reading",
-    description: "Phonics and early reading skills",
-    grade_group: "P1",
-    lessons_count: 15,
-    created_at: "2026-01-15",
-  },
-  {
-    course_id: "c3g4h5i6",
-    title: "Science Basics",
-    description: "Introduction to the natural world",
-    grade_group: "P2",
-    lessons_count: 10,
-    created_at: "2026-02-01",
-  },
-  {
-    course_id: "c4j5k6l7",
-    title: "Social Studies",
-    description: "Community and civic awareness",
-    grade_group: "P2",
-    lessons_count: 8,
-    created_at: "2026-02-10",
-  },
-  {
-    course_id: "c5m6n7o8",
-    title: "Creative Arts",
-    description: "Drawing, painting, and music fundamentals",
-    grade_group: "P3",
-    lessons_count: 6,
-    created_at: "2026-03-01",
-  },
-];
 
 export default function CoursesPage() {
-  const [courses] = useState<Course[]>(sampleCourses);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewCourse, setViewCourse] = useState<Course | null>(null);
   const [editCourse, setEditCourse] = useState<Course | null>(null);
   const [deleteCourse, setDeleteCourse] = useState<Course | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleAddCourse = async (form: any) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/courses`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          grade_group_id: form.grade_group,
+          title: form.title,
+          description: form.description,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Failed to create course");
+    }
+
+    const data = await res.json();
+
+    const formatted: Course = {
+      course_id: data.course_id,
+      title: data.title,
+      description: data.description,
+      grade_group: data.grade_group?.name || "",
+      grade_group_id: data.grade_group?.grade_group_id || "",
+      lessons_count: data._count?.lessons || 0,
+      created_at: new Date(data.created_at).toLocaleDateString(),
+    };
+
+    setCourses((prev) => [formatted, ...prev]);
+  };
+
+  const handleEditCourse = async (form: any) => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/admin/course/${form.course_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          grade_group_id: form.grade_group,
+          title: form.title,
+          description: form.description,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Failed to update course");
+    }
+
+    const data = await res.json();
+    console.log("Response status:", res.status);
+    console.log("Response data:", data);
+
+    const formatted: Course = {
+      course_id: data.course_id,
+      title: data.title,
+      description: data.description,
+      grade_group: data.grade_group?.name || "",
+      grade_group_id: data.grade_group?.grade_group_id,
+      lessons_count: data._count?.lessons || 0,
+      created_at: new Date(data.created_at).toLocaleDateString(),
+    };
+
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.course_id === formatted.course_id ? formatted : c
+      )
+    );
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!deleteCourse) return;
+
+    setDeleting(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/course/${deleteCourse.course_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete course");
+      }
+
+      // Remove from state
+      setCourses((prev) =>
+        prev.filter((c) => c.course_id !== deleteCourse.course_id)
+      );
+
+      toast.success("Course deleted successfully");
+
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    }
+
+    finally {
+      setDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/admin/courses`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch courses");
+
+        const data = await res.json();
+
+        // Transforming backend response to match the Course interface
+        const formatted: Course[] = data.map((c: {
+        course_id: string;
+        title: string;
+        description: string;
+        grade_group: {
+          grade_group_id: string;
+          name: string;
+          description: string;
+        };
+        _count: {
+          lessons: number;
+        };
+        created_at: string;
+      }) => ({
+        course_id: c.course_id,
+        title: c.title,
+        description: c.description,
+        grade_group: c.grade_group?.name || "",
+        grade_group_id: c.grade_group?.grade_group_id,
+        lessons_count: c._count?.lessons || 0,
+        created_at: new Date(c.created_at).toLocaleDateString(),
+      }));
+
+        setCourses(formatted);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="py-6 flex justify-center items-center">
+        Loading courses...
+      </div>
+    );
+  }
+
+  // calculating stats from actual course data from the backend
+
+  const totalCourses = courses.length;
+
+  const totalLessons = courses.reduce(
+    (sum, c) => sum + (c.lessons_count || 0),
+    0
+  );
+
+  const activeCourses = courses.filter(
+    (c) => (c.lessons_count || 0) > 0
+  ).length;
+
+  const uniqueGradeGroups = new Set(
+    courses.map((c) => c.grade_group_id)
+  ).size;
+
+  const stats = [
+    {
+      label: "Total Courses",
+      value: totalCourses,
+      icon: LuBookOpen,
+      color: "#3749a9",
+    },
+    {
+      label: "Total Lessons",
+      value: totalLessons,
+      icon: LuFileText,
+      color: "#131b46",
+    },
+    {
+      label: "Active Courses",
+      value: activeCourses,
+      icon: LuActivity,
+      color: "#1b9e5a",
+    },
+    {
+      label: "Grade Groups",
+      value: uniqueGradeGroups,
+      icon: LuLayers,
+      color: "#5b2d8a",
+    },
+  ];
 
   return (
     <div className="py-6">
@@ -144,62 +344,77 @@ export default function CoursesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {courses.map((c) => (
-                <TableRow
-                  key={c.course_id}
-                  className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
-                >
-                  <TableCell className="px-6 py-4 font-semibold text-[#0f1535] text-[13.5px]">
-                    {c.title}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge variant="secondary">{c.grade_group}</Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[13px] text-[#7b82a8] hidden md:table-cell max-w-[200px] truncate">
-                    {c.description || "—"}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
-                    {c.lessons_count}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-[12.5px] text-[#9ba3c7] hidden lg:table-cell">
-                    {c.created_at}
-                  </TableCell>
-                  <TableCell className="px-4 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <LuEllipsis size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="min-w-[160px]"
-                      >
-                        <DropdownMenuItem onClick={() => setViewCourse(c)}>
-                          <LuEye size={14} className="mr-2" /> View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigator.clipboard.writeText(c.course_id)
-                          }
-                        >
-                          <LuCopy size={14} className="mr-2" /> Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setEditCourse(c)}>
-                          <LuPencil size={14} className="mr-2" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => setDeleteCourse(c)}
-                        >
-                          <LuTrash2 size={14} className="mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {courses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <EmptyTableState
+                      icon={LuBookOpen}
+                      title="No courses found"
+                      description="Courses will appear here once added."
+                      actionLabel="Add Course"
+                      onAction={() => setShowAdd(true)}
+                    />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+
+                courses.map((c) => (
+                  <TableRow
+                    key={c.course_id}
+                    className="border-b border-[#f0f1f7] hover:bg-[#f7f8fc] transition-colors"
+                  >
+                    <TableCell className="px-6 py-4 font-semibold text-[#0f1535] text-[13.5px]">
+                      {c.title}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge variant="secondary">{c.grade_group}</Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[13px] text-[#7b82a8] hidden md:table-cell max-w-[200px] truncate">
+                      {c.description || "—"}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[13px] text-[#4b5281]">
+                      {c.lessons_count}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-[12.5px] text-[#9ba3c7] hidden lg:table-cell">
+                      {c.created_at}
+                    </TableCell>
+                    <TableCell className="px-4 py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <LuEllipsis size={16} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="min-w-[160px]"
+                        >
+                          <DropdownMenuItem onClick={() => setViewCourse(c)}>
+                            <LuEye size={14} className="mr-2" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigator.clipboard.writeText(c.course_id)
+                            }
+                          >
+                            <LuCopy size={14} className="mr-2" /> Copy ID
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setEditCourse(c)}>
+                            <LuPencil size={14} className="mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => setDeleteCourse(c)}
+                          >
+                            <LuTrash2 size={14} className="mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+              ))
+            )}
             </TableBody>
           </Table>
         </div>
@@ -215,19 +430,23 @@ export default function CoursesPage() {
         open={showAdd}
         onClose={() => setShowAdd(false)}
         course={null}
-        onSave={(data) => console.log("Add course:", data)}
+        onSave={handleAddCourse}
       />
+
       <AddEditCourseModal
         open={!!editCourse}
         onClose={() => setEditCourse(null)}
         course={editCourse}
-        onSave={(data) => console.log("Edit course:", data)}
+        onSave={handleEditCourse}
       />
       <DeleteCourseModal
         open={!!deleteCourse}
         onClose={() => setDeleteCourse(null)}
         course={deleteCourse}
-        onConfirm={() => console.log("Delete:", deleteCourse?.course_id)}
+        onConfirm={async () => {
+          await handleDeleteCourse();
+          setDeleteCourse(null);
+        }}
       />
     </div>
   );

@@ -19,8 +19,20 @@ export class LessonProgressResponseDto {
   })
   lesson_id: string;
 
+  @ApiProperty({ example: 45.5, description: 'Current progress percentage (0-100)' })
+  progress_percentage: number;
+
+  @ApiProperty({
+    example: 40.0,
+    description: 'The progress percentage that has already been rewarded with points',
+  })
+  last_rewarded_percentage: number;
+
   @ApiProperty({ example: true })
   completed: boolean;
+
+  @ApiProperty({ example: 25.5, description: 'Total points earned for this lesson' })
+  points: number;
 
   @ApiProperty({ example: '2026-03-05T00:00:00.000Z' })
   last_accessed: Date;

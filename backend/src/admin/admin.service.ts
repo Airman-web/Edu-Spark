@@ -5,7 +5,10 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { AdminCreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { AdminCreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 import {
   RegisterGuardianDto,
   RegisterStudentDto,
@@ -100,11 +103,14 @@ export class AdminService {
         email: true,
         phone_number: true,
         created_at: true,
+        _count: {
+          select: { students: true },
+        },
       },
     });
   }
 
-  async createCourse(data: CreateCourseDto) {
+  async createCourse(data: AdminCreateCourseDto) {
     try {
       return await (this.prisma.course as any).create({
         data: {
@@ -142,6 +148,60 @@ export class AdminService {
     }
   }
 
+  async updateCourse(id: string, data: UpdateCourseDto) {
+    try {
+      const updateData: any = {};
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.grade_group_id !== undefined) {
+        updateData.grade_group = { connect: { grade_group_id: data.grade_group_id } };
+      }
+
+      return await (this.prisma.course as any).update({
+        where: { course_id: id },
+        data: updateData,
+        include: {
+          grade_group: true,
+          _count: {
+            select: { lessons: true },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Course with ID "${id}" not found.`);
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `A course with title "${data.title}" already exists for this grade group.`,
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while updating the course.',
+      );
+    }
+  }
+
+  async deleteCourse(id: string) {
+    try {
+      await (this.prisma.course as any).delete({
+        where: { course_id: id },
+      });
+      return { message: `Course "${id}" deleted successfully.` };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Course with ID "${id}" not found.`);
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while deleting the course.',
+      );
+    }
+  }
+
   async registerGuardian(data: RegisterGuardianDto) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     try {
@@ -170,6 +230,24 @@ export class AdminService {
       }
       throw new InternalServerErrorException(
         'An unexpected error occurred during guardian registration.',
+      );
+    }
+  }
+
+  async deleteGuardian(id: string) {
+    try {
+      await (this.prisma.guardian as any).delete({
+        where: { guardian_id: id },
+      });
+      return { message: `Guardian "${id}" deleted successfully.` };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Guardian with ID "${id}" not found.`);
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while deleting the guardian.',
       );
     }
   }
@@ -209,6 +287,162 @@ export class AdminService {
       }
       throw new InternalServerErrorException(
         'An unexpected error occurred during student registration.',
+      );
+    }
+  }
+
+  async getAllLessons() {
+    return (this.prisma.lesson as any).findMany({
+      include: {
+        course: {
+          select: {
+            title: true,
+            description: true,
+            course_id: true,
+          }
+        }
+      },
+      orderBy: {
+        title: 'asc',
+      },
+    });
+  }
+
+  async getLessonById(id: string) {
+    const lesson = await (this.prisma.lesson as any).findUnique({
+      where: { lesson_id: id },
+      include: {
+        course: {
+          select: {
+            title: true,
+            description: true,
+            course_id: true,
+          }
+        }
+      },
+    });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson with ID "${id}" not found.`);
+    }
+
+    return lesson;
+  }
+
+  async getLessonsByCourse(courseId: string) {
+    return (this.prisma.lesson as any).findMany({
+      where: { course_id: courseId },
+      include: {
+        course: {
+          select: {
+            title: true,
+            description: true,
+            course_id: true,
+          }
+        }
+      },
+      orderBy: {
+        title: 'asc',
+      },
+    });
+  }
+
+  async createLesson(data: AdminCreateLessonDto) {
+    try {
+      return await (this.prisma.lesson as any).create({
+        data: {
+          title: data.title,
+          content_type: data.content_type,
+          content: data.content,
+          points_reward: data.points_reward,
+          course: {
+            connect: { course_id: data.course_id },
+          },
+        },
+        include: {
+          course: {
+            select: {
+              title: true,
+              description: true,
+              course_id: true,
+            }
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `A lesson with title "${data.title}" already exists for this course.`,
+          );
+        }
+        if (error.code === 'P2025') {
+          throw new NotFoundException(
+            `Course with ID "${data.course_id}" not found.`,
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while creating the lesson.',
+      );
+    }
+  }
+
+  async updateLesson(id: string, data: UpdateLessonDto) {
+    try {
+      const updateData: any = {};
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.content_type !== undefined) updateData.content_type = data.content_type;
+      if (data.content !== undefined) updateData.content = data.content;
+      if (data.points_reward !== undefined) updateData.points_reward = data.points_reward;
+      if (data.course_id !== undefined) {
+        updateData.course = { connect: { course_id: data.course_id } };
+      }
+
+      return await (this.prisma.lesson as any).update({
+        where: { lesson_id: id },
+        data: updateData,
+        include: {
+          course: {
+            select: {
+              title: true,
+              description: true,
+              course_id: true,
+            }
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Lesson with ID "${id}" or Course with ID "${data.course_id}" not found.`);
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `A lesson with title "${data.title}" already exists for this course.`,
+          );
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while updating the lesson.',
+      );
+    }
+  }
+
+  async deleteLesson(id: string) {
+    try {
+      await (this.prisma.lesson as any).delete({
+        where: { lesson_id: id },
+      });
+      return { message: `Lesson "${id}" deleted successfully.` };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Lesson with ID "${id}" not found.`);
+        }
+      }
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while deleting the lesson.',
       );
     }
   }

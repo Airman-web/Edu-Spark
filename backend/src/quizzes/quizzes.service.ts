@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class QuizzesService {
@@ -9,33 +10,45 @@ export class QuizzesService {
   async create(createQuizDto: CreateQuizDto) {
     const { questions, ...quizData } = createQuizDto;
 
-    return (this.prisma.quiz as any).create({
-      data: {
-        ...quizData,
-        questions: {
-          create: questions.map((q) => ({
-            question_text: q.question_text,
-            options: {
-              create: q.options.map((o) => ({
-                option_text: o.option_text,
-                is_correct: o.is_correct,
-              })),
-            },
-          })),
-        },
-      },
-      include: {
-        questions: {
-          include: {
-            options: true,
+    try {
+      return await (this.prisma.quiz as any).create({
+        data: {
+          ...quizData,
+          questions: {
+            create: questions.map((q) => ({
+              question_text: q.question_text,
+              points: q.points,
+              options: {
+                create: q.options.map((o) => ({
+                  option_text: o.option_text,
+                  is_correct: o.is_correct,
+                })),
+              },
+            })),
           },
         },
-      },
-    });
+        include: {
+          questions: {
+            include: {
+              options: true,
+            },
+          },
+        },
+      });
+    } catch (error: any) {
+      if (error && error.code === 'P2002') {
+        throw new ConflictException('A quiz for this lesson already exists.');
+      }
+      if (error && (error.code === 'P2025' || error.code === 'P2003')) {
+        throw new NotFoundException('Lesson not found. Please provide a valid lesson_id.');
+      }
+      console.error('Quiz creation failed with unhandled error:', error);
+      throw new InternalServerErrorException('An unexpected server error occurred while creating the quiz.');
+    }
   }
 
-  findOne(id: string) {
-    return (this.prisma.quiz as any).findUnique({
+  async findOne(id: string) {
+    const quiz = await (this.prisma.quiz as any).findUnique({
       where: { quiz_id: id },
       include: {
         questions: {
@@ -45,10 +58,19 @@ export class QuizzesService {
         },
       },
     });
+
+    if (quiz) {
+      const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+        by: ['student_id'],
+        where: { quiz_id: quiz.quiz_id },
+      });
+      return { ...quiz, studentsTakenCount: uniqueStudents.length };
+    }
+    return null;
   }
 
-  findOneByLesson(lessonId: string) {
-    return (this.prisma.quiz as any).findUnique({
+  async findOneByLesson(lessonId: string) {
+    const quiz = await (this.prisma.quiz as any).findFirst({
       where: { lesson_id: lessonId },
       include: {
         questions: {
@@ -58,5 +80,60 @@ export class QuizzesService {
         },
       },
     });
+
+    if (quiz) {
+      const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+        by: ['student_id'],
+        where: { quiz_id: quiz.quiz_id },
+      });
+      return { ...quiz, studentsTakenCount: uniqueStudents.length };
+    }
+    return null;
+  }
+
+  async update(id: string, updateQuizDto: any) {
+    const { questions, ...quizData } = updateQuizDto;
+    
+    if (questions) {
+      // Recreate questions if provided
+      await (this.prisma.quizQuestion as any).deleteMany({
+        where: { quiz_id: id }
+      });
+      
+      return await (this.prisma.quiz as any).update({
+        where: { quiz_id: id },
+        data: {
+          ...quizData,
+          questions: {
+            create: questions.map((q) => ({
+              question_text: q.question_text,
+              points: q.points,
+              options: {
+                create: q.options.map((o) => ({
+                  option_text: o.option_text,
+                  is_correct: o.is_correct,
+                })),
+              },
+            })),
+          },
+        },
+        include: { questions: { include: { options: true } } }
+      });
+    }
+
+    return await (this.prisma.quiz as any).update({
+      where: { quiz_id: id },
+      data: quizData,
+      include: { questions: { include: { options: true } } }
+    });
+  }
+
+  async remove(id: string) {
+    await (this.prisma.studentQuizAttempt as any).deleteMany({ where: { quiz_id: id } });
+    await (this.prisma.quizOption as any).deleteMany({
+      where: { question: { quiz_id: id } }
+    });
+    await (this.prisma.quizQuestion as any).deleteMany({ where: { quiz_id: id } });
+    return (this.prisma.quiz as any).delete({ where: { quiz_id: id } });
   }
 }

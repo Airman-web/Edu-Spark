@@ -61,4 +61,50 @@ export class GuardiansService {
       },
     });
   }
+
+  async getStudentPerformance(guardianId: string) {
+    const students = await (this.prisma.student as any).findMany({
+      where: { guardian_id: guardianId },
+      include: {
+        points_history: true,
+      },
+    });
+
+    return students.map((student) => {
+      const totalPoints = student.points_history.reduce(
+        (sum, record) => sum + Number(record.points),
+        0
+      );
+      
+      const { password, points_history, ...studentData } = student;
+      
+      return {
+        ...studentData,
+        total_points: totalPoints,
+      };
+    });
+  }
+  async getStudentsCourseProgress(guardianId: string, coursesService: any) {
+    const students = await (this.prisma.student as any).findMany({
+      where: { guardian_id: guardianId },
+      select: {
+        student_id: true,
+        full_name: true,
+        display_name: true,
+        profile_image_url: true,
+      },
+    });
+
+    return Promise.all(
+      students.map(async (student) => {
+        const enrollments = await coursesService.getStudentEnrollments(student.student_id);
+        
+        return {
+          ...student,
+          name: student.display_name || student.full_name,
+          enrollments,
+        };
+      })
+    );
+  }
 }

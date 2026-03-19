@@ -14,6 +14,17 @@ export class DashboardStatsDto {
   activeStudents: number;
 }
 
+export class CourseSummaryDto {
+  @ApiProperty({ example: 'c1a2b3c4' })
+  course_id: string;
+
+  @ApiProperty({ example: 'Mathematics 101' })
+  title: string;
+
+  @ApiProperty({ example: 'Basic arithmetic' })
+  description: string;
+}
+
 class GradeGroupDto {
   @ApiProperty({ example: 'p1' })
   grade_group_id: string;
@@ -98,4 +109,30 @@ export class AdminCourseResponseDto {
 
   @ApiProperty({ example: '2026-03-05T00:00:00.000Z' })
   created_at: Date;
+}
+
+export class AdminLessonResponseDto {
+  @ApiProperty({ example: 'l1a2b3c4' })
+  lesson_id: string;
+
+  @ApiProperty({ example: 'c1a2b3c4' })
+  course_id: string;
+
+  @ApiProperty({ example: 'Introduction to Numbers' })
+  title: string;
+
+  @ApiProperty({ example: 'video' })
+  content_type: string;
+
+  @ApiProperty({ example: 'https://youtube.com/...' })
+  content: string;
+
+  @ApiProperty({ example: 10 })
+  points_reward: number;
+
+  @ApiProperty({ example: '2026-03-05T00:00:00.000Z' })
+  created_at: Date;
+
+  @ApiProperty({ type: CourseSummaryDto })
+  course: CourseSummaryDto;
 }

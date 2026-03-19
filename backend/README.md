@@ -1,8 +1,8 @@
-# EduSpark Backend ✨
+# EduSpark Backend 
 
 Welcome to the EduSpark backend. This is a NestJS application using Prisma ORM with a MySQL database.
 
-## 🚀 Getting Started
+##  Getting Started
 
 . Environment Setup
 Create a `.env` file in the `backend` root 

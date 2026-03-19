@@ -17,6 +17,9 @@ import {
   LuTrendingUp,
   LuCalendar,
   LuBell,
+  LuFileText,
+  LuUser,
+  LuBook,
 } from "react-icons/lu";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { toast } from "sonner";
@@ -59,12 +62,38 @@ const adminMain: NavItem[] = [
     path: `${adminRoute}/students`,
   },
   {
+    id: "grade-groups",
+    label: "Grade Groups",
+    icon: LuUsers,
+    path: `${adminRoute}/grade-groups`,
+  },
+  {
     id: "courses",
     label: "Courses",
     icon: LuBookOpen,
     path: `${adminRoute}/courses`,
   },
+
+  {
+    id: "lessons",
+    label: "Lessons",
+    icon: LuFileText,
+    path: `${adminRoute}/lessons`,
+  },
+  {
+    id: "quizzes",
+    label: "Quizzes",
+    icon: LuFileText, 
+    path: `${adminRoute}/quizzes`,
+  },
+  {
+    id: "leaderboard",
+    label: "Leaderboard",
+    icon: LuTrophy,
+    path: `/leaderboard`,
+  },
 ];
+
 
 
 // Guardian nav
@@ -77,7 +106,7 @@ const guardianMain: NavItem[] = [
   },
   {
     id: "students",
-    label: "My Students",
+    label: "My Children",
     icon: LuGraduationCap,
     path: `${guardianRoute}/students`,
   },
@@ -87,11 +116,17 @@ const guardianMain: NavItem[] = [
     icon: LuTrendingUp,
     path: `${guardianRoute}/progress`,
   },
+   {
+    id: "courses",
+    label: "Find Courses",
+    icon: LuBook,
+    path: `../courses`,
+  },
   {
-    id: "messages",
-    label: "Messages",
-    icon: LuMessageSquare,
-    path: `${guardianRoute}/messages`,
+    id: "leaderboard",
+    label: "Leaderboard",
+    icon: LuTrophy,
+    path: `/leaderboard`,
   },
 ];
 
@@ -111,45 +146,43 @@ const studentMain: NavItem[] = [
     path: `${studentRoute}/courses`,
   },
   {
+    id: "student-courses",
+    label: "Other Courses",
+    icon: LuBook,
+    path: `../courses`,
+  },
+  {
     id: "leaderboard",
     label: "Leaderboard",
     icon: LuTrophy,
-    path: `${studentRoute}/leaderboard`,
+    path: `/leaderboard`,
+  },
+  {
+    id: "profile",
+    label: "Profile",
+    icon: LuUser,
+    path: `${studentRoute}/profile`,
   },
 ];
 
-const sharedBottom = (base: string): NavItem[] => [
-  {
-    id: "settings",
-    label: "Settings",
-    icon: LuSettings,
-    path: `${base}/settings`,
-  },
-  {
-    id: "support",
-    label: "Support",
-    icon: LuHeadphones,
-    path: `${base}/support`,
-  },
-];
 
 function usePortal(pathname: string) {
   if (pathname.startsWith(guardianRoute))
     return {
       main: guardianMain,
-      bottom: sharedBottom(guardianRoute),
       base: guardianRoute,
+      role: "Guardian",
     };
   if (pathname.startsWith(studentRoute))
     return {
       main: studentMain,
-      bottom: sharedBottom(studentRoute),
       base: studentRoute,
+      role: "Student",
     };
   return {
     main: adminMain,
-    bottom: sharedBottom(adminRoute),
     base: adminRoute,
+    role: "Admin",
   };
 }
 
@@ -158,7 +191,6 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
   const pathname = usePathname();
   const {
     main: mainNav,
-    bottom: bottomNav,
     base: portalBase,
   } = usePortal(pathname);
 
@@ -201,7 +233,24 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
           : first
             ? first.slice(0, 2).toUpperCase()
             : "U";
-      setUserProfile({ name, role: u.role || "Admin", initials });
+      let formattedRole = "User";
+
+      if (u.role) {
+        formattedRole =
+          u.role.toLowerCase() === "admin"
+            ? "Admin"
+            : u.role.toLowerCase() === "guardian"
+            ? "Guardian"
+            : u.role.toLowerCase() === "student"
+            ? "Student"
+            : u.role;
+      }
+
+      setUserProfile({
+        name,
+        role: formattedRole,
+        initials,
+      });
     } catch (err) {
       toast.error("Failed to load user profile", {
         description:
@@ -215,6 +264,15 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
     if (isMobile) onClose();
   };
   const user = userProfile;
+  
+    const handleLogout = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      setProfileOpen(false);
+
+      router.replace("/login"); 
+    };
 
   const NavBtn = ({
     item,
@@ -227,6 +285,7 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
       ? pathname === item.path
       : pathname === item.path || pathname.startsWith(item.path + "/");
     const Icon = item.icon;
+
 
     return (
       <button
@@ -304,9 +363,6 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
         className={`shrink-0 pt-2 pb-1 ${mobile || !collapsed ? "px-4" : "px-3"}`}
         style={{ borderTop: "1.5px solid #e4e6f0" }}
       >
-        {bottomNav.map((item) => (
-          <NavBtn key={item.id} item={item} exact />
-        ))}
       </div>
 
       {/* Profile */}
@@ -363,30 +419,9 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
               className="absolute bottom-full left-0 mb-1 w-44 bg-white rounded-xl border border-[#e4e6f0] py-1 z-50 overflow-hidden"
               style={{ boxShadow: "0 8px 24px rgba(19,27,70,0.12)" }}
             >
-              <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  navigate(`${portalBase}/profile`);
-                }}
-                className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#3d4566] hover:bg-[#f0f2fa] transition-colors"
-              >
-                <LuSettings size={13} color="#7b82a8" /> View Profile
-              </button>
-              <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  navigate(`${portalBase}/settings`);
-                }}
-                className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#3d4566] hover:bg-[#f0f2fa] transition-colors"
-              >
-                <LuSettings size={13} color="#7b82a8" /> Settings
-              </button>
               <div className="h-px bg-[#e4e6f0] my-1 mx-3" />
               <button
-                onClick={() => {
-                  setProfileOpen(false);
-                  router.push("/");
-                }}
+                onClick={handleLogout}
                 className="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-red-500 hover:bg-red-50 transition-colors"
               >
                 <span className="text-sm leading-none">⏻</span> Sign Out

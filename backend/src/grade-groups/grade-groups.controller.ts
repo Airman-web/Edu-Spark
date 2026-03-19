@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Patch, Param, Delete } from '@nestjs/common';
 import { GradeGroupsService } from './grade-groups.service';
 import { GradeGroupDto } from './dto/grade-group.dto';
 import { CreateGradeGroupDto } from './dto/create-grade-group.dto';
+import { UpdateGradeGroupDto } from './dto/update-grade-group.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   ApiTags,
@@ -36,6 +37,30 @@ export class GradeGroupsController {
   })
   create(@Body() createGradeGroupDto: CreateGradeGroupDto) {
     return this.gradeGroupsService.create(createGradeGroupDto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a grade group' })
+  @ApiResponse({
+    status: 200,
+    description: 'Grade group successfully updated.',
+    type: GradeGroupDto,
+  })
+  update(
+    @Param('id') id: string,
+    @Body() updateGradeGroupDto: UpdateGradeGroupDto,
+  ) {
+    return this.gradeGroupsService.update(id, updateGradeGroupDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a grade group' })
+  @ApiResponse({
+    status: 200,
+    description: 'Grade group successfully deleted.',
+  })
+  remove(@Param('id') id: string) {
+    return this.gradeGroupsService.remove(id);
   }
 
   @Post('seed')

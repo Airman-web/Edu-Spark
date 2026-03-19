@@ -28,6 +28,8 @@ import {
   faArrowRight,
   faArrowLeft,
   faTrophy,
+  faClipboardQuestion,
+  
 } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
@@ -533,6 +535,37 @@ export default function LessonDetailPage() {
                       </Link>
                     )}
                   </div>
+                </div> 
+                                {/* Take Quiz */}
+                <div style={{
+                  marginTop: "32px", padding: "24px",
+                  background: "linear-gradient(135deg, #1b2561, #290e42)",
+                  borderRadius: "20px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  flexWrap: "wrap", gap: "16px",
+                  boxShadow: "0 8px 32px rgba(19,27,70,0.2)",
+                }}>
+                  <div>
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>
+                      Ready?
+                    </p>
+                    <p style={{ fontSize: "1rem", fontWeight: 800, color: "#ffffff" }}>
+                      Test your knowledge on this lesson
+                    </p>
+                  </div>
+                  <Link
+                    href={`/courses/${courseId}/${lessonId}/quiz`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      padding: "12px 28px", borderRadius: "50px",
+                      backgroundImage: "radial-gradient(circle at 60% 40%, #3749a9, #1b2561)",
+                      color: "#ffffff", fontSize: "0.95rem", fontWeight: 700,
+                      textDecoration: "none",
+                      boxShadow: "0 4px 16px rgba(55,73,169,0.4)",
+                    }}
+                  >
+                    Take Quiz
+                  </Link>
                 </div>
 
               </div>
