@@ -13,6 +13,9 @@ import { GradeGroupsModule } from './grade-groups/grade-groups.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AdminModule } from './admin/admin.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +31,9 @@ import { AdminModule } from './admin/admin.module';
     PointsModule,
     GradeGroupsModule,
     AdminModule,
+    SessionsModule,
+    NotificationsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

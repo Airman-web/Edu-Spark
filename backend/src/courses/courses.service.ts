@@ -1,15 +1,27 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CoursesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
-  create(createCourseDto: CreateCourseDto) {
-    return this.prisma.course.create({
+  async create(createCourseDto: CreateCourseDto) {
+    const course = await this.prisma.course.create({
       data: createCourseDto,
     });
+
+    this.notificationsService.notifyAllAdmins({
+      type: 'new_course',
+      title: 'New Course Created',
+      message: `A new course "${course.title}" has been created.`,
+    }).catch(() => {});
+
+    return course;
   }
 
   findAll(gradeGroupId?: string) {
@@ -57,7 +69,7 @@ export class CoursesService {
       throw new ConflictException('Student is already enrolled in this course');
     }
 
-    return this.prisma.enrollment.create({
+    const enrollment = await this.prisma.enrollment.create({
       data: {
         student_id: studentId,
         course_id: courseId,
@@ -71,6 +83,15 @@ export class CoursesService {
         },
       },
     });
+
+    await this.notificationsService.create({
+      student_id: studentId,
+      type: 'enrollment',
+      title: 'Enrolled in a New Course!',
+      message: `You've been enrolled in "${course.title}". Start learning and earn points!`,
+    });
+
+    return enrollment;
   }
 
   async getStudentEnrollments(studentId: string) {

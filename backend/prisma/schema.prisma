@@ -14,18 +14,20 @@ model Guardian {
   phone_number String?   @unique @db.VarChar(20)
   password     String
   created_at   DateTime  @default(now())
-  students     Student[]
+  students      Student[]
+  notifications Notification[]
 
   @@map("guardians")
 }
 
 model SystemAdmin {
-  admin_id   String   @id @default(uuid())
-  full_name  String   @db.VarChar(150)
-  email      String   @unique @db.VarChar(100)
-  password   String
-  role       String   @default("admin")
-  created_at DateTime @default(now())
+  admin_id      String         @id @default(uuid())
+  full_name     String         @db.VarChar(150)
+  email         String         @unique @db.VarChar(100)
+  password      String
+  role          String         @default("admin")
+  created_at    DateTime       @default(now())
+  notifications Notification[]
 
   @@map("system_admins")
 }
@@ -57,6 +59,8 @@ model Student {
   quiz_attempts     StudentQuizAttempt[]
   points_history    PointsHistory[]
   enrollments       Enrollment[]
+  sessions          StudentSession[]
+  notifications     Notification[]
 
   @@map("students")
 }
@@ -185,4 +189,33 @@ model Enrollment {
 
   @@unique([student_id, course_id])
   @@map("enrollments")
+}
+
+model Notification {
+  notification_id String   @id @default(uuid())
+  student_id      String?
+  guardian_id     String?
+  admin_id        String?
+  type            String   @db.VarChar(50)
+  title           String   @db.VarChar(255)
+  message         String   @db.Text
+  is_read         Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  student  Student?     @relation(fields: [student_id], references: [student_id])
+  guardian Guardian?    @relation(fields: [guardian_id], references: [guardian_id])
+  admin    SystemAdmin? @relation(fields: [admin_id], references: [admin_id])
+
+  @@map("notifications")
+}
+
+model StudentSession {
+  session_id       String   @id @default(uuid())
+  student_id       String
+  started_at       DateTime @default(now())
+  duration_seconds Int
+
+  student Student @relation(fields: [student_id], references: [student_id])
+
+  @@map("student_sessions")
 }

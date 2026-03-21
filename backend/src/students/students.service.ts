@@ -8,10 +8,14 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class StudentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(guardianId: string, createStudentDto: CreateStudentDto) {
     try {
@@ -42,7 +46,7 @@ export class StudentsService {
         ? new Date(createStudentDto.date_of_birth)
         : null;
 
-      return await (this.prisma.student as any).create({
+      const student = await (this.prisma.student as any).create({
         data: {
           ...createStudentDto,
           date_of_birth: dateOfBirth,
@@ -53,6 +57,14 @@ export class StudentsService {
           grade_group: true,
         },
       });
+
+      this.notificationsService.notifyAllAdmins({
+        type: 'new_registration',
+        title: 'New Student Registered',
+        message: `A new student "${student.full_name}" (@${student.display_name}) has been registered in ${student.grade_group.name}.`,
+      }).catch(() => {});
+
+      return student;
     } catch (error) {
       console.error('Error creating student:', error);
       if (

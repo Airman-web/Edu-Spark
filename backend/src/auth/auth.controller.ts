@@ -19,6 +19,8 @@ import {
   StudentLoginResponseDto,
 } from './dto/login-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
+import { Roles } from './roles.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -59,6 +61,21 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+
+  @Post('switch-to-child/:studentId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('guardian')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Guardian switches into a child portal without re-login' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a student-scoped access token.',
+    type: StudentLoginResponseDto,
+  })
+  switchToChild(@Request() req, @Param('studentId') studentId: string) {
+    return this.authService.switchToChild(req.user.sub, studentId);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('student-login')

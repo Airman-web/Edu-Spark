@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   UpdateLessonProgressDto,
   RecordQuizAttemptDto,
@@ -11,6 +12,7 @@ export class ProgressService {
   constructor(
     private prisma: PrismaService,
     private pointsService: PointsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async updateLessonProgress(studentId: string, dto: UpdateLessonProgressDto) {
@@ -130,6 +132,14 @@ export class ProgressService {
       dto.score,
       `Quiz Result: ${attempt.quiz.lesson.title}`,
     );
+
+    // Notify student of their quiz score
+    await this.notificationsService.create({
+      student_id: studentId,
+      type: 'quiz_score',
+      title: 'Quiz Completed!',
+      message: `You scored ${Number(dto.score).toFixed(0)} points on the quiz for "${attempt.quiz.lesson.title}". Keep it up!`,
+    });
 
     return attempt;
   }

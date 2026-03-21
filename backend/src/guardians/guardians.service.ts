@@ -2,10 +2,14 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { CreateGuardianDto } from './dto/create-guardian.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class GuardiansService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(createGuardianDto: CreateGuardianDto) {
     const { password, ...rest } = createGuardianDto;
@@ -28,7 +32,7 @@ export class GuardiansService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    return (this.prisma.guardian as any).create({
+    const guardian = await (this.prisma.guardian as any).create({
       data: {
         ...rest,
         password: hashedPassword,
@@ -41,6 +45,14 @@ export class GuardiansService {
         created_at: true,
       },
     });
+
+    this.notificationsService.notifyAllAdmins({
+      type: 'new_registration',
+      title: 'New Guardian Registered',
+      message: `A new guardian "${guardian.full_name}" (${guardian.email}) has created an account.`,
+    }).catch(() => {});
+
+    return guardian;
   }
 
   async findByEmail(email: string) {

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoursesService } from './courses.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('CoursesService', () => {
   let service: CoursesService;
@@ -9,10 +10,8 @@ describe('CoursesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CoursesService,
-        {
-          provide: PrismaService,
-          useValue: {},
-        },
+        { provide: PrismaService, useValue: {} },
+        { provide: NotificationsService, useValue: { notifyAllAdmins: jest.fn() } },
       ],
     }).compile();
 

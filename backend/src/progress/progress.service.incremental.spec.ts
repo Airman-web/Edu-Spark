@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProgressService } from './progress.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateLessonProgressDto } from './dto/progress.dto';
 
 describe('ProgressService Incremental Progress', () => {
@@ -35,12 +36,17 @@ describe('ProgressService Incremental Progress', () => {
     addPoints: jest.fn(),
   };
 
+  const mockNotificationsService = {
+    create: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProgressService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: PointsService, useValue: mockPointsService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

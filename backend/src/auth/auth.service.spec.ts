@@ -149,6 +149,47 @@ describe('AuthService', () => {
     });
   });
 
+  describe('switchToChild', () => {
+    const mockStudent = {
+      student_id: 's1',
+      guardian_id: 'guardian-1',
+      display_name: 'child1',
+      full_name: 'Child One',
+    };
+
+    it('should throw UnauthorizedException if student is not found', async () => {
+      mockPrismaService.systemAdmin.findUnique.mockResolvedValue(null);
+      (mockPrismaService as any).student = { findUnique: jest.fn().mockResolvedValue(null) };
+
+      await expect(
+        service.switchToChild('guardian-1', 'bad-student'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if student belongs to different guardian', async () => {
+      (mockPrismaService as any).student = {
+        findUnique: jest.fn().mockResolvedValue({ ...mockStudent, guardian_id: 'other-guardian' }),
+      };
+
+      await expect(
+        service.switchToChild('guardian-1', 's1'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should return a student-scoped token when guardian owns the student', async () => {
+      (mockPrismaService as any).student = {
+        findUnique: jest.fn().mockResolvedValue(mockStudent),
+      };
+      mockJwtService.signAsync.mockResolvedValue('child_token');
+
+      const result = await service.switchToChild('guardian-1', 's1');
+
+      expect(result.access_token).toBe('child_token');
+      expect(result.user.role).toBe('student');
+      expect(result.user.display_name).toBe('child1');
+    });
+  });
+
   describe('studentLogin', () => {
     it('should successfully login a student and return a token', async () => {
       const studentLoginDto = {

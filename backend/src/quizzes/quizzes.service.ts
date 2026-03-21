@@ -1,17 +1,21 @@
 import { Injectable, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class QuizzesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(createQuizDto: CreateQuizDto) {
     const { questions, ...quizData } = createQuizDto;
 
     try {
-      return await (this.prisma.quiz as any).create({
+      const quiz = await (this.prisma.quiz as any).create({
         data: {
           ...quizData,
           questions: {
@@ -28,13 +32,18 @@ export class QuizzesService {
           },
         },
         include: {
-          questions: {
-            include: {
-              options: true,
-            },
-          },
+          questions: { include: { options: true } },
+          lesson: { select: { title: true } },
         },
       });
+
+      this.notificationsService.notifyAllAdmins({
+        type: 'new_quiz',
+        title: 'New Quiz Created',
+        message: `A new quiz with ${quiz.questions.length} question${quiz.questions.length !== 1 ? 's' : ''} has been added to lesson "${quiz.lesson.title}".`,
+      }).catch(() => {});
+
+      return quiz;
     } catch (error: any) {
       if (error && error.code === 'P2002') {
         throw new ConflictException('A quiz for this lesson already exists.');

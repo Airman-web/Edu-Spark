@@ -82,6 +82,22 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
+  async switchToChild(guardianId: string, studentId: string) {
+    const student = await (this.prisma.student as any).findUnique({
+      where: { student_id: studentId },
+    });
+
+    if (!student) {
+      throw new UnauthorizedException('Student not found');
+    }
+
+    if (student.guardian_id !== guardianId) {
+      throw new UnauthorizedException('This student does not belong to you');
+    }
+
+    return this.generateToken(student, 'student');
+  }
+
   async studentLogin(studentLoginDto: StudentLoginDto) {
     const student = await this.studentsService.findByDisplayName(
       studentLoginDto.display_name,

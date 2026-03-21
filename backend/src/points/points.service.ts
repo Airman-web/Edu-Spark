@@ -1,18 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PointsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async addPoints(studentId: string, points: number, sourceType: string) {
-    return (this.prisma.pointsHistory as any).create({
+    const record = await (this.prisma.pointsHistory as any).create({
       data: {
         student_id: studentId,
         points: points,
         source_type: sourceType,
       },
     });
+
+    await this.notificationsService.create({
+      student_id: studentId,
+      type: 'points_earned',
+      title: 'Points Earned!',
+      message: `You earned ${Number(points).toFixed(0)} points — ${sourceType}`,
+    });
+
+    return record;
   }
 
   async getHistory(studentId: string) {
