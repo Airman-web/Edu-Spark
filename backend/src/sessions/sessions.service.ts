@@ -24,10 +24,13 @@ export class SessionsService {
       throw new NotFoundException('Student not found');
     }
 
+    const startedAt = new Date(Date.now() - dto.duration_seconds * 1000);
+
     const session = await (this.prisma.studentSession as any).create({
       data: {
         student_id: studentId,
         duration_seconds: dto.duration_seconds,
+        started_at: startedAt,
       },
     });
 

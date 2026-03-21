@@ -69,7 +69,11 @@ describe('SessionsService', () => {
 
       expect(result).toEqual({ session_id: 's1', duration_seconds: 2000 });
       expect(mockPrisma.studentSession.create).toHaveBeenCalledWith({
-        data: { student_id: 'student-1', duration_seconds: 2000 },
+        data: {
+          student_id: 'student-1',
+          duration_seconds: 2000,
+          started_at: expect.any(Date),
+        },
       });
     });
 
