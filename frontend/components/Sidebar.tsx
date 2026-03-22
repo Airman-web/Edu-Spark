@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import {
   LuLayoutDashboard,
   LuUsers,
@@ -329,7 +330,8 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
   const NavContent = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       {/* Logo */}
-      <div
+      <Link
+        href="/"
         className={`flex items-center shrink-0 h-[68px] ${
           mobile || !collapsed ? "px-5 gap-3" : "justify-center px-4"
         }`}
@@ -347,7 +349,7 @@ export default function Sidebar({ open, onClose, collapsed }: SidebarProps) {
             Edu<span style={{ color: "#3749a9" }}>Spark</span>
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Main nav */}
       <nav
