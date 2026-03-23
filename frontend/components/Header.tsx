@@ -53,7 +53,7 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const unreadCount = 0;
-
+  const [isParentMode, setIsParentMode] = useState(false);
   const [userInfo, setUserInfo] = useState({
     firstName: "",
     role: "",
@@ -77,6 +77,13 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
         firstName,
         role: user?.role || "",
       });
+    }
+   const guardianToken = localStorage.getItem("guardian_token");
+
+    if (guardianToken) {
+      setIsParentMode(true);
+    } else {
+      setIsParentMode(false);
     }
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -131,7 +138,38 @@ export default function Header({ onMenuClick, sidebarWidth }: HeaderProps) {
       </div>
 
         {/* Spacer */}
-        <div className="flex-1" />
+          <div className="flex-1" />
+
+          {/* Parent Mode Switch */}
+          {isParentMode && (
+            <div className="flex items-center gap-3 mr-4">
+              <div className="px-3 py-1 text-xs font-semibold rounded-full bg-[#fef3c7] text-[#92400e] border border-[#facc15]">
+                👨‍👩‍👧 Parent Mode
+              </div>
+
+              <button
+                onClick={() => {
+                  const guardianToken = localStorage.getItem("guardian_token");
+                  const guardianUser = localStorage.getItem("guardian_user");
+
+                  if (guardianToken && guardianUser) {
+                    localStorage.setItem("token", guardianToken);
+                    localStorage.setItem("user", guardianUser);
+                    localStorage.setItem("role", "guardian");
+                  }
+
+                  localStorage.removeItem("guardian_token");
+                  localStorage.removeItem("guardian_user");
+
+                  window.location.href = "/guardian-dashboard";
+                }}
+
+                className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#3749a9] text-white hover:opacity-90 transition"
+              >
+                Back to Parent
+              </button>
+            </div>
+          )}
 
         {/* Right actions */}
         <div className="flex items-center gap-3 shrink-0">

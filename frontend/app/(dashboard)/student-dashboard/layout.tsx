@@ -12,10 +12,17 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+    const storedUser = localStorage.getItem("user");
+    const subrole = localStorage.getItem("subrole");
 
-    if (!token || role !== "student") {
-      localStorage.clear();
+    if (!token || !storedUser) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const user = JSON.parse(storedUser);
+
+    if (user.role !== "student" && subrole !== "student") {
       window.location.href = "/login";
     }
     
