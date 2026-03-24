@@ -11,6 +11,66 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [autoCollapsed, setAutoCollapsed] = useState(false);
 
   useEffect(() => {
+  let startTime = Date.now();
+  let accumulatedSeconds = 0;
+  let isActive = true;
+
+  const handleVisibility = () => {
+  if (document.hidden) {
+    accumulatedSeconds += Math.floor((Date.now() - startTime) / 1000);
+    isActive = false;
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        duration_seconds: accumulatedSeconds
+      }),
+      keepalive: true
+    });
+
+    accumulatedSeconds = 0; // reset after sending
+  } else {
+    startTime = Date.now();
+    isActive = true;
+  }
+};
+
+  const handleBeforeUnload = async () => {
+    if (isActive) {
+      accumulatedSeconds += Math.floor((Date.now() - startTime) / 1000);
+    }
+
+    const token = localStorage.getItem("token");
+
+    window.addEventListener("beforeunload", () => {
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({
+      duration_seconds: accumulatedSeconds
+    }),
+    keepalive: true
+  });
+});
+  };
+
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("beforeunload", handleBeforeUnload);
+
+  return () => {
+    document.removeEventListener("visibilitychange", handleVisibility);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  };
+}, []);
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     const subrole = localStorage.getItem("subrole");
