@@ -26,6 +26,8 @@ export default function StudentDashboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardRank, setLeaderboardRank] = useState<number | null>(null);
 
+  
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -33,11 +35,6 @@ export default function StudentDashboardPage() {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         const role = user?.role;
         const studentId = user?.sub || user?.id;
-
-        if (!token || role !== "student") {
-          router.replace("/login");
-          return;
-        }
 
         setAuthorized(true);
 
@@ -74,11 +71,12 @@ export default function StudentDashboardPage() {
             }),
           ]);
 
+
         // progress
         if (progressRes.ok) {
           const data = await progressRes.json();
-          console.log("🔥 RAW PROGRESS DATA:", data);
-  console.log("🔥 RAW total_points:", data?.total_points);
+          console.log(" RAW PROGRESS DATA:", data);
+          console.log("RAW total_points:", data?.total_points);
           setProgress(data);
         }
 
@@ -208,6 +206,7 @@ export default function StudentDashboardPage() {
         <StatCard icon={<LuTarget />} label="Quiz Average" value={`${quizAverage}%`} color="text-[#1b9e5a]" />
         <StatCard icon={<LuBookOpen />} label="Enrolled Courses" value={enrollments.length} color="text-[#5b2d8a]" />
       </div>
+      
 
       {/* LEADERBOARD */}
       <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-6">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 // adding recharts for the graph
 import {
   BarChart,
@@ -17,9 +18,48 @@ import type { Student } from "@/components/modals/StudentModals";
 import { LuUsers, LuHeart, LuBaby } from "react-icons/lu";
 
 export default function GuardianDashboardHome() {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [performance, setPerformance] = useState<any[]>([]);
+
+  const switchToChild = async (studentId: string) => {
+  try {
+    const guardianToken = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/switch-to-child/${studentId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${guardianToken}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      toast.error("Switch failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    // Save guardian session
+    localStorage.setItem("guardian_token", guardianToken || "");
+    localStorage.setItem("guardian_user", localStorage.getItem("user") || "");
+
+    // Replace with student session
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("role", data.user.role); // if you still use it
+
+    // Go to student dashboard
+    router.push("/student-dashboard");
+
+  } catch (err) {
+    console.error("Switch error:", err);
+  }
+};
 
   const calculateAge = (dob?: string) => {
     if (!dob) return 0;
@@ -78,6 +118,8 @@ export default function GuardianDashboardHome() {
     }
   };
 
+
+
   const topPerformer =
   performance.length > 0
     ? performance.reduce((prev, current) =>
@@ -88,6 +130,7 @@ export default function GuardianDashboardHome() {
   useEffect(() => {
     fetchStudents();
     fetchPerformance();
+    
   }, []);
 
   if (loading) {
@@ -114,6 +157,9 @@ export default function GuardianDashboardHome() {
           ) / totalChildren
         )
       : 0;
+  const performanceMap = new Map(
+    performance.map((p) => [p.student_id, Number(p.total_points)])
+  );
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] px-6 py-8">
@@ -159,6 +205,61 @@ export default function GuardianDashboardHome() {
           />
 
         </div>
+
+        {/* GUARDIAN CHILDREN SWITCHER */}
+              <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#1b2561]">
+                       My Children
+                    </h2>
+                    <p className="text-sm text-[#7b82a8]">
+                      Switch into your child's learning portal
+                    </p>
+                  </div>
+                </div>
+        
+                {students.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    No linked students yet.
+                  </p>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {students.map((child: any) => (
+                      <div
+                        key={child.student_id}
+                        className="flex items-center justify-between p-4 rounded-xl border hover:border-[#3749a9] transition cursor-pointer bg-[#f9f9ff]"
+                        onClick={() => switchToChild(child.student_id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          {child.profile_image_url ? (
+                            <img
+                              src={child.profile_image_url}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-[#3749a9] text-white flex items-center justify-center font-bold">
+                              {child.full_name?.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-sm">
+                              {child.full_name}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {performanceMap.get(child.student_id) || 0} points
+                            </p>
+                          </div>
+                        </div>
+        
+                        <button className="px-3 py-1 text-xs bg-[#3749a9] text-white rounded-lg">
+                          Switch
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
         {/*  Chart showing children age distribution */}
         <div className="bg-white rounded-2xl border border-[#e4e6f0] shadow-sm p-8">

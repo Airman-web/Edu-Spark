@@ -57,13 +57,91 @@ export default function StudentCourseDetailPage() {
   const videoMilestoneRef = React.useRef(0);
   const resumePercentRef = React.useRef(0);
 
-  useEffect(() => {
-  if (!lessonProgress) return;
+  const playerRef = React.useRef<HTMLDivElement | null>(null);
+  const ytPlayerRef = React.useRef<any>(null);
+  const intervalRef = React.useRef<any>(null);
+  const milestoneRequestRef = React.useRef(false);
+  const lastTimeRef = React.useRef(0);
 
-  if (lessonProgress.completed) {
-    setLessonCompleted(true);
+const saveMilestone = async (percentage: number) => {
+  if (!activeLesson) return;
+  if (videoMilestoneRef.current >= percentage) return;
+  if (lessonProgress?.completed) return;
+
+  //prevent duplicate concurrent calls
+  if (milestoneRequestRef.current) return;
+  milestoneRequestRef.current = true;
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/progress/lesson`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          lesson_id: activeLesson.lesson_id,
+          progress_percentage: percentage,
+        }),
+      }
+    );
+
+    if (!res.ok) return;
+
+    const updated = await res.json();
+    if (!updated) return;
+
+    videoMilestoneRef.current =
+      updated.last_rewarded_percentage ?? percentage;
+
+    setLessonProgress(updated);
+
+    setProgress((prev: any) => {
+      if (!prev) return prev;
+
+      const updatedLessons = prev.completed_lessons
+        ? prev.completed_lessons.map((l: any) =>
+            l.lesson_id === updated.lesson_id ? updated : l
+          )
+        : [updated];
+
+      return {
+        ...prev,
+        completed_lessons: updatedLessons,
+      };
+    });
+
+    const percent = Number(updated.progress_percentage || 0);
+    const points = Number(updated.points || 0);
+
+    if (points > 0) {
+      toast.success(
+        `🎉 +${points} points! (${percent.toFixed(0)}% completed)`
+      );
+      confetti({ particleCount: 120, spread: 90 });
+    }
+
+    if (updated.completed) {
+      setLessonCompleted(true);
+    }
+
+  } finally {
+    // release lock
+    milestoneRequestRef.current = false;
   }
-}, [lessonProgress]);
+};
+
+  useEffect(() => {
+    if (!lessonProgress) return;
+
+    if (lessonProgress.completed) {
+      setLessonCompleted(true);
+    }
+  }, [lessonProgress]);
 
   // fetching lessons and progress data
 
@@ -226,253 +304,197 @@ useEffect(() => {
 }, [activeLesson]);
 
   // formatting the backend reading 
-
-useEffect(() => {
-  if (!activeLesson || activeLesson.content_type !== "reading") return;
-
-    const parts = activeLesson.content.split("⸻");
-
-    const formatted = parts.map((p: string) => {
-        const lines = p.trim().split("\n");
-        return {
-        title: lines[0],
-        body: lines.slice(1).join("\n"),
-        };
-    });
-
-    setSections(formatted);
-
-    const savedPercent = lessonProgress?.progress_percentage || 0;
-
-    setLocalMilestone(savedPercent);
-
-    // convert progress percentage into section index
-    if (formatted.length > 0 && savedPercent > 0) {
-        const resumeIndex = Math.floor(
-        (savedPercent / 100) * formatted.length
-        );
-
-        setCurrentSection(
-        resumeIndex >= formatted.length
-            ? formatted.length - 1
-            : resumeIndex
-        );
-    } else {
-        setCurrentSection(0);
-    }
-
-    setLessonCompleted(lessonProgress?.completed || false);
-
-    }, [activeLesson, lessonProgress]);
-
-  
-    // fetching quiz details for a lesson if it exists
-
   useEffect(() => {
-  if (!activeLesson?.lesson_id) return;
+  if (!activeLesson) return;
+  if (activeLesson.content_type !== "reading") return;
 
-  const fetchQuiz = async () => {
-    const token = localStorage.getItem("token");
+  if (!activeLesson.content) {
+    setSections([]);
+    return;
+  }
 
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/quizzes/lesson/${activeLesson.lesson_id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  const parts = activeLesson.content.split("⸻");
 
-      if (!res.ok) {
-        setQuiz(null);
-        return;
-      }
+  const formatted = parts.map((p: string) => {
+    const lines = p.trim().split("\n");
+    return {
+      title: lines[0] || "",
+      body: lines.slice(1).join("\n"),
+    };
+  });
 
-      const text = await res.text();
-      if (!text) {
-        setQuiz(null);
-        return;
-      }
+  setSections(formatted);
 
-      setQuiz(JSON.parse(text));
-    } catch (err) {
-      console.error("Quiz fetch error:", err);
-      setQuiz(null);
-    }
-  };
+  const savedPercent = lessonProgress?.progress_percentage || 0;
+  setLocalMilestone(savedPercent);
 
-  fetchQuiz();
-}, [activeLesson]);
+  if (formatted.length > 0 && savedPercent > 0) {
+    const resumeIndex = Math.floor(
+      (savedPercent / 100) * formatted.length
+    );
 
+    setCurrentSection(
+      resumeIndex >= formatted.length
+        ? formatted.length - 1
+        : resumeIndex
+    );
+  } else {
+    setCurrentSection(0);
+  }
+
+  setLessonCompleted(lessonProgress?.completed || false);
+}, [activeLesson, lessonProgress]);
+
+// initial video milestone setup based on existing progress
 useEffect(() => {
-  resumePercentRef.current =
-    lessonProgress?.progress_percentage ?? 0;
+  if (!lessonProgress) return;
+
+  const rewarded = lessonProgress.last_rewarded_percentage ?? 0;
+
+  videoMilestoneRef.current = rewarded;
 }, [lessonProgress]);
 
 useEffect(() => {
-  if (!activeLesson || activeLesson.content_type !== "video") return;
+  if (!activeLesson) return;
+  if (activeLesson.content_type !== "video") return;
+  if (!lessonProgress) return;
+  if (lessonProgress.completed) return;
 
-  const rewarded = lessonProgress?.last_rewarded_percentage ?? 0;
+  const loadPlayer = () => {
+    if (!playerRef.current) return;
 
-videoMilestoneRef.current = rewarded;
-setVideoMilestone(rewarded);
-
-}, [activeLesson]);
-
-useEffect(() => {
-    if (lessonProgress?.completed) return;
-  if (!activeLesson || activeLesson.content_type !== "video") return;
-
-  let player: any;
-  let interval: any;
-
-  let lastTime = 0;
-  let isResuming = true;
-
-  const saveMilestone = async (percentage: number) => {
-    if (lessonProgress?.completed) return;
-
-  const lastRewarded = videoMilestoneRef.current;
-
-  if (percentage <= lastRewarded) return;
-  console.log("Trying milestone:", percentage);
-  console.log("Last rewarded:", lessonProgress?.last_rewarded_percentage);
-
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/progress/lesson`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        lesson_id: activeLesson.lesson_id,
-        progress_percentage: percentage,
-      }),
+    // prevent duplicate players
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.destroy();
+      } catch {}
+      ytPlayerRef.current = null;
     }
-  );
 
-  if (!res.ok) return;
+    ytPlayerRef.current = new (window as any).YT.Player(
+      playerRef.current,
+      {
+        videoId: extractYouTubeId(activeLesson.content),
+        events: {
+          onReady: () => {
+            const player = ytPlayerRef.current;
 
-  const updated = await res.json();
+            // Resume from saved progress
+            const savedPercent = lessonProgress?.progress_percentage ?? 0;
 
-  if (!updated) return;
+            if (savedPercent > 1) {
+              const waitForDuration = setInterval(() => {
+                const duration = player.getDuration();
 
-  videoMilestoneRef.current = updated.last_rewarded_percentage ?? percentage;
-  setVideoMilestone(percentage);
+                if (duration && duration > 0) {
+                  clearInterval(waitForDuration);
 
-  setLessonProgress(updated);
-  setProgress((prev: any) => {
-  if (!prev) return prev;
-
-  const updatedLessons = prev.completed_lessons
-    ? prev.completed_lessons.map((l: any) =>
-        l.lesson_id === updated.lesson_id ? updated : l
-      )
-    : [updated];
-
-  return {
-    ...prev,
-    completed_lessons: updatedLessons,
-  };
-});
-
-  const percent = Number(updated.progress_percentage || 0);
-  const points = Number(updated.points || 0);
-
-  if (points > 0) {
-    toast.success(
-      `🎉 Awarded +${points} points! (${percent.toFixed(0)}% completed)`
-    );
-    confetti({ particleCount: 120, spread: 90 });
-  }
-
-  if (updated.completed) {
-    setLessonCompleted(true);
-    if (interval) clearInterval(interval);
-  }
-};
-
-  const initializePlayer = () => {
-    player = new (window as any).YT.Player("youtube-player", {
-      videoId: extractYouTubeId(activeLesson.content),
-      events: {
-        onReady: () => {
-            const savedPercent = resumePercentRef.current;
-            const duration = player.getDuration();
-
-            if (savedPercent > 0) {
-            const duration = player.getDuration();
-            const resumeTime = (savedPercent / 100) * duration;
-
-            player.seekTo(resumeTime, true);
-
-            // Set lastTime to resume position to avoid fake skip detection
-            lastTime = resumeTime;
+                  const seekToTime = (savedPercent / 100) * duration;
+                  player.seekTo(seekToTime, true);
+                }
+              }, 300);
             }
 
-            interval = setInterval(() => {
-            if (!player || !player.getDuration) return;
+            // clear previous interval if exists
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
 
-            const duration = player.getDuration();
-            const current = player.getCurrentTime();
-            if (!duration) return;
+            intervalRef.current = setInterval(() => {
+              if (!player) return;
 
-            if (isResuming) {
-                isResuming = false;
-                lastTime = current;
+              const duration = player.getDuration();
+              const current = player.getCurrentTime();
+
+              // Detect skip
+              if (lastTimeRef.current > 0) {
+                const jump = current - lastTimeRef.current;
+
+                if (jump > 3) {
+                  toast.error("⚠️ Skipping is not allowed. Please watch properly.");
+                  player.seekTo(lastTimeRef.current, true);
+                  return;
+                }
+              }
+
+              // update last watched time
+              lastTimeRef.current = current;
+
+              if (!duration || current === undefined) return;
+
+              //Only track when actually playing
+              if (
+                !player.getPlayerState ||
+                player.getPlayerState() !==
+                  (window as any).YT.PlayerState.PLAYING
+              ) {
                 return;
-            }
+              }
 
-            const delta = current - lastTime;
+              const percentWatched = (current / duration) * 100;
 
-            // Skip detection
-            if (delta > 5) {
-                toast.error("⏩ Skipping ahead is not allowed!");
-                lastTime = current;
-                return;
-            }
+              // 1% start trigger
+              if (current > 1 && videoMilestoneRef.current < 1) {
+                saveMilestone(1);
+              }
 
-            lastTime = current;
+              const milestones = [25, 50, 75, 100];
 
-            const percentWatched = (current / duration) * 100;
-
-            if (percentWatched >= 99) {
-                saveMilestone(100);
-            } else if (percentWatched >= 75) {
-                saveMilestone(75);
-            } else if (percentWatched >= 50) {
-                saveMilestone(50);
-            } else if (percentWatched >= 25) {
-                saveMilestone(25);
-            }
-
+              for (const m of milestones) {
+                if (
+                  percentWatched >= m &&
+                  videoMilestoneRef.current < m
+                ) {
+                  saveMilestone(m);
+                  break;
+                }
+              }
             }, 1000);
+          },
+
+          onStateChange: (event: any) => {
+          const YT = (window as any).YT;
+
+          if (!YT) return;
+
+          // When video fully ends
+          if (event.data === YT.PlayerState.ENDED) {
+            if (videoMilestoneRef.current < 100) {
+              markLessonComplete();
+            }
+          }
         },
-      },
-    });
+
+        },
+      }
+    );
   };
 
   if ((window as any).YT?.Player) {
-    initializePlayer();
+    loadPlayer();
   } else {
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    (window as any).onYouTubeIframeAPIReady = () => {
-      initializePlayer();
-    };
+    (window as any).onYouTubeIframeAPIReady = loadPlayer;
   }
 
   return () => {
-    if (interval) clearInterval(interval);
-    if (player?.destroy) player.destroy();
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.destroy();
+      } catch {}
+      ytPlayerRef.current = null;
+    }
   };
-}, [activeLesson, lessonProgress]);
-  
+}, [activeLesson]); 
 
   const markLessonComplete = async () => {
     const token = localStorage.getItem("token");
@@ -644,7 +666,7 @@ const nextSection = async () => {
 
         {activeLesson.content_type === "video" ? (
           <div className="rounded-2xl overflow-hidden shadow-lg border border-[#e4e6f0]">
-        <div id="youtube-player" className="w-full h-[450px]" />
+        <div ref={playerRef} className="w-full h-[450px]" />
         </div>
         ) : (
           <>
