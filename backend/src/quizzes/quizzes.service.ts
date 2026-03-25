@@ -17,13 +17,16 @@ export class QuizzesService {
     try {
       const quiz = await (this.prisma.quiz as any).create({
         data: {
-          ...quizData,
+          lesson_id: quizData.lesson_id,
+          total_points: quizData.total_points,
+          is_timed: quizData.is_timed ?? false,
+          time_limit_seconds: quizData.time_limit_seconds,
           questions: {
-            create: questions.map((q) => ({
+            create: questions.map((q: any) => ({
               question_text: q.question_text,
               points: q.points,
               options: {
-                create: q.options.map((o) => ({
+                create: q.options.map((o: any) => ({
                   option_text: o.option_text,
                   is_correct: o.is_correct,
                 })),
@@ -45,6 +48,7 @@ export class QuizzesService {
 
       return quiz;
     } catch (error: any) {
+      console.error('DEBUG: Quiz creation failed with error:', error);
       if (error && error.code === 'P2002') {
         throw new ConflictException('A quiz for this lesson already exists.');
       }
@@ -100,11 +104,39 @@ export class QuizzesService {
     return null;
   }
 
+  async findAllByLesson(lessonId: string) {
+    const quizzes = await (this.prisma.quiz as any).findMany({
+      where: { lesson_id: lessonId },
+      include: {
+        questions: {
+          include: {
+            options: true,
+          },
+        },
+      },
+    });
+
+    return Promise.all(
+      quizzes.map(async (quiz: any) => {
+        const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+          by: ['student_id'],
+          where: { quiz_id: quiz.quiz_id },
+        });
+        return { ...quiz, studentsTakenCount: uniqueStudents.length };
+      }),
+    );
+  }
+
   async update(id: string, updateQuizDto: any) {
     const { questions, ...quizData } = updateQuizDto;
     
     if (questions) {
       // Recreate questions if provided
+      // Delete options first to avoid foreign key constraint issues
+      await (this.prisma.quizOption as any).deleteMany({
+        where: { question: { quiz_id: id } }
+      });
+      
       await (this.prisma.quizQuestion as any).deleteMany({
         where: { quiz_id: id }
       });
@@ -138,11 +170,80 @@ export class QuizzesService {
   }
 
   async remove(id: string) {
+    const quiz = await (this.prisma.quiz as any).findUnique({
+      where: { quiz_id: id }
+    });
+
+    if (!quiz) {
+      throw new NotFoundException(`Quiz with ID ${id} not found`);
+    }
+
     await (this.prisma.studentQuizAttempt as any).deleteMany({ where: { quiz_id: id } });
     await (this.prisma.quizOption as any).deleteMany({
       where: { question: { quiz_id: id } }
     });
     await (this.prisma.quizQuestion as any).deleteMany({ where: { quiz_id: id } });
     return (this.prisma.quiz as any).delete({ where: { quiz_id: id } });
+  }
+
+  async findAll(options: { page?: number; limit?: number; lessonId?: string } = {}) {
+    const { page = 1, limit = 10, lessonId } = options;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (lessonId) {
+      where.lesson_id = lessonId;
+    }
+
+    const [total, quizzes] = await Promise.all([
+      (this.prisma.quiz as any).count({ where }),
+      (this.prisma.quiz as any).findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          lesson: {
+            created_at: 'desc',
+          },
+        },
+        include: {
+          lesson: {
+            select: {
+              title: true,
+              course: {
+                select: {
+                  title: true,
+                },
+              },
+            },
+          },
+          questions: {
+            include: {
+              options: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const results = await Promise.all(
+      quizzes.map(async (quiz: any) => {
+        const uniqueStudents = await (this.prisma.studentQuizAttempt as any).groupBy({
+          by: ['student_id'],
+          where: { quiz_id: quiz.quiz_id },
+        });
+        return { ...quiz, studentsTakenCount: uniqueStudents.length };
+      }),
+    );
+
+    return {
+      data: results,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

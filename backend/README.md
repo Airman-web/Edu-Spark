@@ -36,7 +36,7 @@ The server will start on `http://localhost:4001`.
 
 EduSpark features an interactive Swagger portal where you can test all endpoints:
 
-**URL:** [http://localhost:4001/api](http://localhost:4001/api)
+**URL:** [http://localhost:4001/docs](http://localhost:4001/docs)
 
 ### Quick Tips for Swagger:
 1. **Authorize**: Click the **Authorize** button and enter your JWT token to access protected routes.
